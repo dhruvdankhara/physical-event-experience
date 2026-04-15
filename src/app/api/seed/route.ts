@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
+import {
+  findBlockById,
+  findNearestGate,
+  offsetCoordinateByMeters,
+  toGeoJSONPoint,
+} from "@/features/map/narendraModiStadiumData";
 import POI from "@/models/POI";
 
 type SeedPOI = {
   name: string;
   type: "RESTROOM" | "CONCESSION" | "MERCH" | "EXIT" | "FIRST_AID";
+  sectionId?: string;
+  blockId?: string;
   location: {
     type: "Point";
     coordinates: [number, number];
@@ -13,35 +21,182 @@ type SeedPOI = {
   status: "OPEN" | "CLOSED" | "AT_CAPACITY";
 };
 
-// Mock data using generic stadium coordinates
-// Note: coordinates are [longitude, latitude]
+function locationForBlock(blockId: string, northMeters = 0, eastMeters = 0) {
+  const block = findBlockById(blockId);
+
+  if (!block) {
+    throw new Error(`Unknown stadium block: ${blockId}`);
+  }
+
+  const coordinate = offsetCoordinateByMeters(
+    block.coordinate,
+    northMeters,
+    eastMeters,
+  );
+
+  return {
+    sectionId: block.sectionId,
+    blockId: block.id,
+    location: toGeoJSONPoint(coordinate),
+  };
+}
+
+function locationForNearestGate(
+  blockId: string,
+  northMeters = 0,
+  eastMeters = 0,
+) {
+  const block = findBlockById(blockId);
+
+  if (!block) {
+    throw new Error(`Unknown stadium block: ${blockId}`);
+  }
+
+  const nearestGate = findNearestGate(block.coordinate, block.preferredGateIds);
+
+  if (!nearestGate) {
+    throw new Error(`Unable to find gate for block ${blockId}`);
+  }
+
+  const coordinate = offsetCoordinateByMeters(
+    nearestGate.coordinate,
+    northMeters,
+    eastMeters,
+  );
+
+  return {
+    sectionId: block.sectionId,
+    blockId: block.id,
+    location: toGeoJSONPoint(coordinate),
+  };
+}
+
+// Narendra Modi Stadium operational POIs keyed to section/block coordinates.
 const mockPOIs: SeedPOI[] = [
   {
-    name: "Main Concourse Restroom (North)",
+    name: "Jio End Restroom Cluster",
     type: "RESTROOM",
-    location: { type: "Point", coordinates: [-73.9808, 40.7648] },
-    currentWaitTime: 12,
+    ...locationForBlock("J2", -8, -6),
+    currentWaitTime: 9,
     status: "OPEN",
   },
   {
-    name: "Burger & Brews Stand",
+    name: "Jio End Street Food Court",
     type: "CONCESSION",
-    location: { type: "Point", coordinates: [-73.981, 40.765] },
-    currentWaitTime: 25,
+    ...locationForBlock("J4", -10, 8),
+    currentWaitTime: 24,
+    status: "AT_CAPACITY",
+  },
+  {
+    name: "Jio End First Aid Hub",
+    type: "FIRST_AID",
+    ...locationForBlock("J5", -6, 4),
+    currentWaitTime: 4,
     status: "OPEN",
   },
   {
-    name: "Gate A Exit",
+    name: "West Stand Titans Merch Kiosk",
+    type: "MERCH",
+    ...locationForBlock("W2", 6, 8),
+    currentWaitTime: 13,
+    status: "OPEN",
+  },
+  {
+    name: "West Stand Restroom W7",
+    type: "RESTROOM",
+    ...locationForBlock("W7", -5, 5),
+    currentWaitTime: 18,
+    status: "AT_CAPACITY",
+  },
+  {
+    name: "West Stand Emergency Exit",
     type: "EXIT",
-    location: { type: "Point", coordinates: [-73.9815, 40.7645] },
+    ...locationForNearestGate("W4", 0, -3),
     currentWaitTime: 0,
     status: "OPEN",
   },
   {
-    name: "Level 2 VIP Restroom",
+    name: "Adani Pavilion Family Restroom",
     type: "RESTROOM",
-    location: { type: "Point", coordinates: [-73.9805, 40.7652] },
-    currentWaitTime: 2,
+    ...locationForBlock("A2", 6, -4),
+    currentWaitTime: 15,
+    status: "OPEN",
+  },
+  {
+    name: "Adani Pavilion Grill Counter",
+    type: "CONCESSION",
+    ...locationForBlock("A4", 9, 5),
+    currentWaitTime: 26,
+    status: "AT_CAPACITY",
+  },
+  {
+    name: "Adani Pavilion Medical Desk",
+    type: "FIRST_AID",
+    ...locationForBlock("A5", 3, 2),
+    currentWaitTime: 3,
+    status: "OPEN",
+  },
+  {
+    name: "South Concourse Exit Lane",
+    type: "EXIT",
+    ...locationForNearestGate("A3", -1, 1),
+    currentWaitTime: 0,
+    status: "OPEN",
+  },
+  {
+    name: "East Stand Restroom E3",
+    type: "RESTROOM",
+    ...locationForBlock("E3", -3, -4),
+    currentWaitTime: 11,
+    status: "OPEN",
+  },
+  {
+    name: "East Stand Quick Bites",
+    type: "CONCESSION",
+    ...locationForBlock("E5", 4, -8),
+    currentWaitTime: 28,
+    status: "AT_CAPACITY",
+  },
+  {
+    name: "East Stand Fan Shop",
+    type: "MERCH",
+    ...locationForBlock("E7", -2, -2),
+    currentWaitTime: 8,
+    status: "OPEN",
+  },
+  {
+    name: "East Stand Exit E",
+    type: "EXIT",
+    ...locationForNearestGate("E4", 0, 2),
+    currentWaitTime: 0,
+    status: "OPEN",
+  },
+  {
+    name: "Inner Concourse Visitor Help",
+    type: "FIRST_AID",
+    ...locationForBlock("J3", -120, 60),
+    currentWaitTime: 5,
+    status: "OPEN",
+  },
+  {
+    name: "Upper Bowl Water Station",
+    type: "CONCESSION",
+    ...locationForBlock("W1", -38, 55),
+    currentWaitTime: 14,
+    status: "OPEN",
+  },
+  {
+    name: "North-West Exit Corridor",
+    type: "EXIT",
+    ...locationForNearestGate("J1", 2, 4),
+    currentWaitTime: 0,
+    status: "OPEN",
+  },
+  {
+    name: "South-East Exit Corridor",
+    type: "EXIT",
+    ...locationForNearestGate("A6", -2, 4),
+    currentWaitTime: 0,
     status: "OPEN",
   },
 ];

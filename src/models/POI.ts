@@ -3,6 +3,8 @@ import mongoose, { Schema, type Document, type Model } from "mongoose";
 export interface IPOI extends Document {
   name: string;
   type: "RESTROOM" | "CONCESSION" | "MERCH" | "EXIT" | "FIRST_AID";
+  sectionId?: string;
+  blockId?: string;
   location: {
     type: string;
     coordinates: number[];
@@ -19,6 +21,8 @@ const POISchema: Schema<IPOI> = new Schema(
       enum: ["RESTROOM", "CONCESSION", "MERCH", "EXIT", "FIRST_AID"],
       required: true,
     },
+    sectionId: { type: String, required: false },
+    blockId: { type: String, required: false },
     location: {
       type: { type: String, enum: ["Point"], required: true },
       coordinates: { type: [Number], required: true },

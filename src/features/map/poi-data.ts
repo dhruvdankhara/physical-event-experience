@@ -2,6 +2,8 @@ export type POIResponseItem = {
   _id: string;
   name: string;
   type: "RESTROOM" | "CONCESSION" | "MERCH" | "EXIT" | "FIRST_AID";
+  sectionId?: string;
+  blockId?: string;
   location: {
     type: "Point";
     coordinates: [number, number];

@@ -163,6 +163,14 @@ export function DashboardOverlay() {
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">{toLabel(selectedPoi.type)}</Badge>
+                  {selectedPoi.sectionId && (
+                    <Badge variant="outline">
+                      Section {toLabel(selectedPoi.sectionId)}
+                    </Badge>
+                  )}
+                  {selectedPoi.blockId && (
+                    <Badge variant="outline">Block {selectedPoi.blockId}</Badge>
+                  )}
                   <Badge
                     variant="outline"
                     className={getStatusClass(selectedPoi.status)}
