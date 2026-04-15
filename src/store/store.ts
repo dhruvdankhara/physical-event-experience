@@ -1,8 +1,14 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, createSlice } from "@reduxjs/toolkit";
+
+const appSlice = createSlice({
+  name: "app",
+  initialState: { initialized: true },
+  reducers: {},
+});
 
 export const store = configureStore({
   reducer: {
-    // We will add slices here later (e.g., map: mapReducer)
+    app: appSlice.reducer,
   },
 });
 
