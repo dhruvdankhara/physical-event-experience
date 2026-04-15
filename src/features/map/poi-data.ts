@@ -10,6 +10,14 @@ export type POIResponseItem = {
   status: "OPEN" | "CLOSED" | "AT_CAPACITY";
 };
 
+export type POIRealtimePatchEvent = {
+  type: "poi.wait-time.patch";
+  poiId: string;
+  currentWaitTime?: number;
+  status?: POIResponseItem["status"];
+  timestamp: string;
+};
+
 export const POIS_QUERY_KEY = ["pois"] as const;
 
 export async function fetchPOIs() {
