@@ -33,7 +33,7 @@ const POISchema: Schema<IPOI> = new Schema(
   { timestamps: true },
 );
 
-// Critical: 2dsphere index for Mapbox spatial queries
+// Keeps geospatial queries efficient for venue location operations.
 POISchema.index({ location: "2dsphere" });
 
 const POI =

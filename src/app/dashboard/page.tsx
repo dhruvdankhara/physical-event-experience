@@ -1,7 +1,7 @@
 "use client";
 
 import { DashboardOverlay } from "@/features/map/DashboardOverlay";
-import { VenueMap } from "@/features/map/VenueMap";
+import { StadiumMap } from "@/features/map/StadiumMap";
 import { useRealTimeWaitTimes } from "@/hooks/useRealTimeWaitTimes";
 
 export default function DashboardPage() {
@@ -9,7 +9,7 @@ export default function DashboardPage() {
 
   return (
     <main className="relative h-dvh w-full overflow-hidden">
-      <VenueMap />
+      <StadiumMap />
       <DashboardOverlay />
     </main>
   );
