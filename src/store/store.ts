@@ -1,4 +1,5 @@
 import { configureStore, createSlice } from "@reduxjs/toolkit";
+import uiReducer from "@/store/slices/uiSlice";
 
 const appSlice = createSlice({
   name: "app",
@@ -9,6 +10,7 @@ const appSlice = createSlice({
 export const store = configureStore({
   reducer: {
     app: appSlice.reducer,
+    ui: uiReducer,
   },
 });
 

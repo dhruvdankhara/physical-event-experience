@@ -2,53 +2,24 @@
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
-import { AlertTriangle, LoaderCircle, MapPin } from "lucide-react";
-import mapboxgl from "mapbox-gl";
 import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, LoaderCircle } from "lucide-react";
+import mapboxgl from "mapbox-gl";
 import { useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-type POIResponseItem = {
-  _id: string;
-  name: string;
-  type: "RESTROOM" | "CONCESSION" | "MERCH" | "EXIT" | "FIRST_AID";
-  location: {
-    type: "Point";
-    coordinates: [number, number];
-  };
-  currentWaitTime: number;
-  status: "OPEN" | "CLOSED" | "AT_CAPACITY";
-};
+import { fetchPOIs, POIS_QUERY_KEY } from "@/features/map/poi-data";
+import { setSelectedPoiId } from "@/store/slices/uiSlice";
+import type { AppDispatch, RootState } from "@/store/store";
 
 const STADIUM_CENTER: [number, number] = [-73.981, 40.765];
 
-async function fetchPOIs() {
-  const response = await fetch("/api/pois", { method: "GET" });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch POIs");
-  }
-
-  return (await response.json()) as POIResponseItem[];
-}
-
-function buildPopupContent(poi: POIResponseItem) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "space-y-1";
-
-  const title = document.createElement("p");
-  title.className = "text-sm font-semibold text-zinc-900";
-  title.textContent = poi.name;
-
-  const waitTime = document.createElement("p");
-  waitTime.className = "text-xs text-zinc-600";
-  waitTime.textContent = `Wait time: ${poi.currentWaitTime} min`;
-
-  wrapper.append(title, waitTime);
-
-  return wrapper;
-}
-
 export function VenueMap() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { activeFilter, selectedPoiId, searchTerm } = useSelector(
+    (state: RootState) => state.ui,
+  );
+
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker[]>([]);
@@ -65,7 +36,7 @@ export function VenueMap() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["pois"],
+    queryKey: POIS_QUERY_KEY,
     queryFn: fetchPOIs,
   });
 
@@ -117,8 +88,20 @@ export function VenueMap() {
     }
 
     const bounds = new mapboxgl.LngLatBounds();
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
     for (const poi of pois) {
+      if (activeFilter !== "ALL" && poi.type !== activeFilter) {
+        continue;
+      }
+
+      if (
+        normalizedSearchTerm.length > 0 &&
+        !poi.name.toLowerCase().includes(normalizedSearchTerm)
+      ) {
+        continue;
+      }
+
       const [lng, lat] = poi.location.coordinates;
 
       if (typeof lng !== "number" || typeof lat !== "number") {
@@ -127,15 +110,16 @@ export function VenueMap() {
 
       const markerElement = document.createElement("div");
       markerElement.className =
-        "h-4 w-4 rounded-full border-2 border-white bg-cyan-400 shadow-lg shadow-cyan-500/40";
+        selectedPoiId === poi._id
+          ? "h-5 w-5 rounded-full border-2 border-white bg-emerald-400 shadow-lg shadow-emerald-500/50"
+          : "h-4 w-4 rounded-full border-2 border-white bg-cyan-400 shadow-lg shadow-cyan-500/40";
 
-      const popup = new mapboxgl.Popup({ offset: 16 }).setDOMContent(
-        buildPopupContent(poi),
-      );
+      markerElement.addEventListener("click", () => {
+        dispatch(setSelectedPoiId(poi._id));
+      });
 
       const marker = new mapboxgl.Marker({ element: markerElement })
         .setLngLat([lng, lat])
-        .setPopup(popup)
         .addTo(map);
 
       markerRef.current.push(marker);
@@ -149,19 +133,11 @@ export function VenueMap() {
         duration: 900,
       });
     }
-  }, [pois]);
+  }, [activeFilter, dispatch, pois, searchTerm, selectedPoiId]);
 
   return (
     <div className="relative h-full min-h-dvh w-full overflow-hidden bg-zinc-950">
       <div ref={mapContainerRef} className="absolute inset-0" />
-
-      <div className="pointer-events-none absolute left-4 top-4 z-10 rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-white backdrop-blur-sm">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-300">
-          <MapPin className="h-3.5 w-3.5" />
-          Stadium Sync
-        </p>
-        <p className="text-sm font-medium">Live venue map</p>
-      </div>
 
       {!hasMapboxToken && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 px-6">
