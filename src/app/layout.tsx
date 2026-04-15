@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Outfit, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Stadium Sync",
   description: "Your digital companion for live events.",
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b0f1a",
 };
 
 export default function RootLayout({
@@ -44,6 +49,9 @@ export default function RootLayout({
         dmSansHeading.variable,
       )}
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import {
   POIS_QUERY_KEY,
@@ -47,9 +47,17 @@ function isPOIRealtimePatchEvent(
 
 export function useRealTimeWaitTimes() {
   const queryClient = useQueryClient();
+  const hadDisconnectRef = useRef(false);
 
   useEffect(() => {
     const source = new EventSource("/api/stream");
+
+    source.onopen = () => {
+      if (hadDisconnectRef.current) {
+        hadDisconnectRef.current = false;
+        void queryClient.invalidateQueries({ queryKey: POIS_QUERY_KEY });
+      }
+    };
 
     source.onmessage = (event: MessageEvent<string>) => {
       try {
@@ -85,10 +93,14 @@ export function useRealTimeWaitTimes() {
     };
 
     source.onerror = () => {
+      hadDisconnectRef.current = true;
       // EventSource automatically attempts reconnection for transient failures.
     };
 
     return () => {
+      source.onopen = null;
+      source.onmessage = null;
+      source.onerror = null;
       source.close();
     };
   }, [queryClient]);

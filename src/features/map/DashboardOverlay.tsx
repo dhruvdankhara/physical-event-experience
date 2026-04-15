@@ -14,6 +14,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchPOIs,
   POIS_QUERY_KEY,
@@ -58,7 +59,7 @@ export function DashboardOverlay() {
     (state: RootState) => state.ui,
   );
 
-  const { data: pois = [] } = useQuery({
+  const { data: pois = [], isLoading } = useQuery({
     queryKey: POIS_QUERY_KEY,
     queryFn: fetchPOIs,
   });
@@ -71,45 +72,64 @@ export function DashboardOverlay() {
     <>
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 p-3 sm:p-4">
         <div className="pointer-events-auto mx-auto flex w-full max-w-3xl flex-col gap-3 rounded-2xl border border-border/70 bg-background/80 p-3 shadow-lg backdrop-blur-md">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchTerm}
-              onChange={(event) => dispatch(setSearchTerm(event.target.value))}
-              placeholder="Search food, restrooms, exits..."
-              className="h-10 bg-background/85 pl-9 pr-9"
-            />
-            {searchTerm.length > 0 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                className="absolute right-2 top-1/2 -translate-y-1/2"
-                onClick={() => dispatch(setSearchTerm(""))}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            )}
-          </div>
+          {isLoading ? (
+            <>
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                <Skeleton className="h-7 w-14 shrink-0 rounded-lg" />
+                <Skeleton className="h-7 w-20 shrink-0 rounded-lg" />
+                <Skeleton className="h-7 w-24 shrink-0 rounded-lg" />
+                <Skeleton className="h-7 w-16 shrink-0 rounded-lg" />
+                <Skeleton className="h-7 w-24 shrink-0 rounded-lg" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) =>
+                    dispatch(setSearchTerm(event.target.value))
+                  }
+                  placeholder="Search food, restrooms, exits..."
+                  className="h-10 bg-background/85 pl-9 pr-9"
+                />
+                {searchTerm.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    onClick={() => dispatch(setSearchTerm(""))}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {FILTER_OPTIONS.map((filterOption) => {
-              const isActive = activeFilter === filterOption.value;
+              <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {FILTER_OPTIONS.map((filterOption) => {
+                  const isActive = activeFilter === filterOption.value;
 
-              return (
-                <Button
-                  key={filterOption.value}
-                  type="button"
-                  size="sm"
-                  variant={isActive ? "default" : "outline"}
-                  className="shrink-0"
-                  onClick={() => dispatch(setActiveFilter(filterOption.value))}
-                >
-                  {filterOption.label}
-                </Button>
-              );
-            })}
-          </div>
+                  return (
+                    <Button
+                      key={filterOption.value}
+                      type="button"
+                      size="sm"
+                      variant={isActive ? "default" : "outline"}
+                      className="shrink-0"
+                      onClick={() =>
+                        dispatch(setActiveFilter(filterOption.value))
+                      }
+                    >
+                      {filterOption.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
