@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import {
   buildFallbackWaitTimeInsights,
   generateWaitTimeInsights,
+  isVertexInvalidOutputError,
   isMissingVertexCredentialsError,
   isVertexUnimplementedError,
 } from "@/lib/google/vertex";
@@ -42,17 +43,30 @@ export async function POST(request: NextRequest) {
     try {
       insights = await generateWaitTimeInsights(snapshots);
     } catch (error) {
+      console.warn(
+        "Vertex API call failed, falling back to local insights. Error:",
+        error instanceof Error ? error.message : error,
+      );
+
       const missingCredentials = isMissingVertexCredentialsError(error);
       const unsupportedVertexOperation = isVertexUnimplementedError(error);
-
-      if (!missingCredentials && !unsupportedVertexOperation) {
-        throw error;
-      }
+      const invalidVertexOutput = isVertexInvalidOutputError(error);
 
       provider = "local-fallback";
-      warning = missingCredentials
-        ? "Google Cloud Application Default Credentials are not configured. Returned local fallback insights."
-        : "Vertex returned UNIMPLEMENTED for the configured model/location. Returned local fallback insights. Try GOOGLE_CLOUD_LOCATION=global and verify GOOGLE_VERTEX_MODEL.";
+
+      if (missingCredentials) {
+        warning =
+          "Google Cloud Application Default Credentials are not configured. Returned local fallback insights.";
+      } else if (unsupportedVertexOperation) {
+        warning =
+          "Vertex returned UNIMPLEMENTED for the configured model/location. Returned local fallback insights. Try GOOGLE_CLOUD_LOCATION=global and verify GOOGLE_VERTEX_MODEL.";
+      } else if (invalidVertexOutput) {
+        warning =
+          "Vertex returned non-JSON output for this prompt/model. Returned local fallback insights.";
+      } else {
+        warning = `Vertex API encountered an error (${error instanceof Error ? error.message : "Unknown"}). Returned local fallback insights for demo purposes.`;
+      }
+
       insights = buildFallbackWaitTimeInsights(snapshots);
     }
 

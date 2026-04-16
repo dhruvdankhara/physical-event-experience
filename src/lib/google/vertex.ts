@@ -27,6 +27,7 @@ export type WaitTimeInsights = {
 
 const MISSING_VERTEX_CREDENTIALS_CODE = "VERTEX_MISSING_CREDENTIALS";
 const VERTEX_UNIMPLEMENTED_CODE = "VERTEX_UNIMPLEMENTED";
+const VERTEX_INVALID_OUTPUT_CODE = "VERTEX_INVALID_OUTPUT";
 
 type VertexRequestError = Error & {
   code?: string;
@@ -47,7 +48,10 @@ function extractJsonPayload(text: string) {
   const lastBrace = text.lastIndexOf("}");
 
   if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-    throw new Error("Vertex output did not contain a JSON object.");
+    throw createInvalidOutputError(
+      "Vertex output did not contain a JSON object.",
+      text,
+    );
   }
 
   return text.slice(firstBrace, lastBrace + 1);
@@ -131,6 +135,16 @@ function createMissingCredentialsError() {
   return error;
 }
 
+function createInvalidOutputError(message: string, rawOutput?: string) {
+  const suffix = rawOutput
+    ? ` Raw output preview: ${rawOutput.slice(0, 240).replaceAll("\n", " ")}`
+    : "";
+
+  const error = new Error(`${message}${suffix}`) as VertexRequestError;
+  error.code = VERTEX_INVALID_OUTPUT_CODE;
+  return error;
+}
+
 function buildVertexEndpoint(
   projectId: string,
   location: string,
@@ -178,7 +192,7 @@ async function callVertexGenerateContent(params: {
       ],
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 512,
+        maxOutputTokens: 4096,
       },
     }),
     cache: "no-store",
@@ -245,6 +259,27 @@ export function isVertexUnimplementedError(error: unknown) {
     message.includes('"status": "unimplemented"') ||
     message.includes("operation is not implemented") ||
     message.includes("not implemented")
+  );
+}
+
+export function isVertexInvalidOutputError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const codedError = error as VertexRequestError;
+
+  if (codedError.code === VERTEX_INVALID_OUTPUT_CODE) {
+    return true;
+  }
+
+  const message = error.message.toLowerCase();
+
+  return (
+    message.includes("did not contain a json object") ||
+    message.includes("unexpected token") ||
+    message.includes("invalid json") ||
+    message.includes("raw output preview")
   );
 }
 
@@ -383,9 +418,34 @@ export async function generateWaitTimeInsights(snapshots: WaitTimeSnapshot[]) {
       .trim() ?? "";
 
   if (!modelText) {
-    throw new Error("Vertex returned an empty response body.");
+    throw createInvalidOutputError("Vertex returned an empty response body.");
   }
 
-  const parsed = JSON.parse(extractJsonPayload(modelText));
-  return VertexInsightsSchema.parse(parsed);
+  let parsedJson: unknown;
+
+  try {
+    parsedJson = JSON.parse(extractJsonPayload(modelText));
+  } catch (error) {
+    if (isVertexInvalidOutputError(error)) {
+      throw error;
+    }
+
+    throw createInvalidOutputError(
+      error instanceof Error
+        ? `Vertex returned malformed JSON: ${error.message}`
+        : "Vertex returned malformed JSON.",
+      modelText,
+    );
+  }
+
+  try {
+    return VertexInsightsSchema.parse(parsedJson);
+  } catch (error) {
+    throw createInvalidOutputError(
+      error instanceof Error
+        ? `Vertex JSON did not match expected schema: ${error.message}`
+        : "Vertex JSON did not match expected schema.",
+      modelText,
+    );
+  }
 }
