@@ -39,6 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={cn(
         "h-full",
         "antialiased",
@@ -49,9 +50,6 @@ export default function RootLayout({
         dmSansHeading.variable,
       )}
     >
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-      </head>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>

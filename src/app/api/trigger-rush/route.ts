@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
+import { requireSession } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import POI from "@/models/POI";
 
@@ -23,8 +24,14 @@ function toStringId(value: unknown): string {
   return "";
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
+
+    if (auth.error) {
+      return auth.error;
+    }
+
     await connectDB();
 
     const allPois = await POI.find({}).select("_id").lean();

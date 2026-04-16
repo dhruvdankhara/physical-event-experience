@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import connectDB from "@/lib/db";
+import { requireSession } from "@/lib/auth";
 import {
   findBlockById,
   findNearestGate,
@@ -7,6 +9,8 @@ import {
   toGeoJSONPoint,
 } from "@/features/map/narendraModiStadiumData";
 import POI from "@/models/POI";
+
+export const runtime = "nodejs";
 
 type SeedPOI = {
   name: string;
@@ -201,8 +205,14 @@ const mockPOIs: SeedPOI[] = [
   },
 ];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
+
+    if (auth.error) {
+      return auth.error;
+    }
+
     await connectDB();
 
     // 1. Clear existing POIs to prevent duplicates on multiple clicks
