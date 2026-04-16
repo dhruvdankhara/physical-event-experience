@@ -13,13 +13,7 @@ const globalForMongoose = globalThis as typeof globalThis & {
   mongoose?: MongooseCache;
 };
 
-const MONGODB_URI = process.env.MONGODB_URI!;
-
-if (!MONGODB_URI) {
-  throw new Error(
-    "Please define the MONGODB_URI environment variable inside .env.local",
-  );
-}
+const MONGODB_URI = process.env.MONGODB_URI;
 
 // Global cache to prevent multiple connections in development (HMR)
 const cached: MongooseCache = globalForMongoose.mongoose ?? {
@@ -32,6 +26,12 @@ if (!globalForMongoose.mongoose) {
 }
 
 async function connectDB() {
+  if (!MONGODB_URI) {
+    throw new Error(
+      "Please define the MONGODB_URI environment variable inside .env.local",
+    );
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
