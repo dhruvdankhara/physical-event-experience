@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-
 import { requireSession } from "@/lib/auth";
-import { createAlert, listAlerts } from "@/lib/firestore-repositories";
+import { getAllAlerts, createNewAlert } from "@/services/alert.service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,53 +16,33 @@ const AlertCreateSchema = z.object({
 
 export async function GET() {
   try {
-    const alerts = await listAlerts(50);
-
+    const alerts = await getAllAlerts(50);
     return NextResponse.json({ alerts }, { status: 200 });
   } catch (error) {
     console.error("Alerts GET error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch alerts." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch alerts." }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
-
-    if (auth.error) {
-      return auth.error;
-    }
+    if (auth.error) return auth.error;
 
     const raw = (await request.json()) as unknown;
     const parsed = AlertCreateSchema.safeParse(raw);
 
     if (!parsed.success) {
       return NextResponse.json(
-        {
-          error: "Invalid alert payload.",
-          details: parsed.error.flatten().fieldErrors,
-        },
-        { status: 400 },
+        { error: "Invalid alert payload.", details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
       );
     }
 
-    const created = await createAlert({
-      ...parsed.data,
-      createdBy: auth.session.sub,
-    });
-
-    return NextResponse.json(
-      { message: "Alert created.", alert: created },
-      { status: 201 },
-    );
+    const created = await createNewAlert({ ...parsed.data, createdBy: auth.session.sub });
+    return NextResponse.json({ message: "Alert created.", alert: created }, { status: 201 });
   } catch (error) {
     console.error("Alerts POST error:", error);
-    return NextResponse.json(
-      { error: "Failed to create alert." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to create alert." }, { status: 500 });
   }
 }

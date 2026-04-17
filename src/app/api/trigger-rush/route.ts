@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-
 import { requireSession } from "@/lib/auth";
-import { incrementRandomPOIWaitTime } from "@/lib/firestore-repositories";
+import { triggerWaitTimeIncrease } from "@/services/poi.service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,18 +8,12 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
+    if (auth.error) return auth.error;
 
-    if (auth.error) {
-      return auth.error;
-    }
-
-    const updatedPoi = await incrementRandomPOIWaitTime(10);
+    const updatedPoi = await triggerWaitTimeIncrease(10);
 
     if (!updatedPoi) {
-      return NextResponse.json(
-        { error: "No POIs available to trigger a rush." },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "No POIs available to trigger a rush." }, { status: 404 });
     }
 
     return NextResponse.json(
@@ -31,13 +24,10 @@ export async function GET(request: NextRequest) {
         currentWaitTime: updatedPoi.currentWaitTime,
         status: updatedPoi.status,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("Trigger rush error:", error);
-    return NextResponse.json(
-      { error: "Failed to trigger rush update." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to trigger rush update." }, { status: 500 });
   }
 }

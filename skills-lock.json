@@ -95,6 +95,11 @@
       "source": "mapbox/mapbox-agent-skills",
       "sourceType": "github",
       "computedHash": "0bab1e72dc49350b735a8f8fbfa3fe1b602b7f965232bfc1b3b42088d460e276"
+    },
+    "playwright-explore-website": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "computedHash": "ac361696198c2db22a0f9d3aa456d2f83c9f0110bf00d6ca529f735395fe3a5c"
     }
   }
 }

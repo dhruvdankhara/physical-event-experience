@@ -1,12 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-
 import { requireSession } from "@/lib/auth";
-import {
-  deleteAlertById,
-  getAlertById,
-  updateAlertById,
-} from "@/lib/firestore-repositories";
+import { fetchAlertById, modifyAlertById, removeAlertById } from "@/services/alert.service";
 
 export const runtime = "nodejs";
 
@@ -28,19 +23,14 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const alert = await getAlertById(id);
+    const alert = await fetchAlertById(id);
 
-    if (!alert) {
-      return NextResponse.json({ error: "Alert not found." }, { status: 404 });
-    }
+    if (!alert) return NextResponse.json({ error: "Alert not found." }, { status: 404 });
 
     return NextResponse.json({ alert }, { status: 200 });
   } catch (error) {
     console.error("Alert GET by id error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch alert." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch alert." }, { status: 500 });
   }
 }
 
@@ -50,10 +40,7 @@ export async function PATCH(
 ) {
   try {
     const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
-
-    if (auth.error) {
-      return auth.error;
-    }
+    if (auth.error) return auth.error;
 
     const { id } = await context.params;
     const raw = (await request.json()) as unknown;
@@ -61,27 +48,18 @@ export async function PATCH(
 
     if (!parsed.success) {
       return NextResponse.json(
-        {
-          error: "Invalid alert update payload.",
-          details: parsed.error.flatten().fieldErrors,
-        },
-        { status: 400 },
+        { error: "Invalid alert update payload.", details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
       );
     }
 
-    const updated = await updateAlertById(id, parsed.data);
-
-    if (!updated) {
-      return NextResponse.json({ error: "Alert not found." }, { status: 404 });
-    }
+    const updated = await modifyAlertById(id, parsed.data);
+    if (!updated) return NextResponse.json({ error: "Alert not found." }, { status: 404 });
 
     return NextResponse.json({ message: "Alert updated.", alert: updated });
   } catch (error) {
     console.error("Alert PATCH error:", error);
-    return NextResponse.json(
-      { error: "Failed to update alert." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to update alert." }, { status: 500 });
   }
 }
 
@@ -91,24 +69,16 @@ export async function DELETE(
 ) {
   try {
     const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
-
-    if (auth.error) {
-      return auth.error;
-    }
+    if (auth.error) return auth.error;
 
     const { id } = await context.params;
-    const deleted = await deleteAlertById(id);
+    const deleted = await removeAlertById(id);
 
-    if (!deleted) {
-      return NextResponse.json({ error: "Alert not found." }, { status: 404 });
-    }
+    if (!deleted) return NextResponse.json({ error: "Alert not found." }, { status: 404 });
 
     return NextResponse.json({ message: "Alert deleted." }, { status: 200 });
   } catch (error) {
     console.error("Alert DELETE error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete alert." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to delete alert." }, { status: 500 });
   }
 }

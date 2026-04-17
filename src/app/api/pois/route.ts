@@ -1,21 +1,16 @@
 import { NextResponse } from "next/server";
-import { listPOIs } from "@/lib/firestore-repositories";
+import { getAllPOIs } from "@/services/poi.service";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const pois = await listPOIs();
-
+    const pois = await getAllPOIs();
     return NextResponse.json(pois, { status: 200 });
   } catch (error) {
     console.error("POI fetch error:", error);
-
-    const message =
-      error instanceof Error ? error.message : "Failed to fetch POIs";
-    const isFirestoreNotFound = message.includes(
-      "Firestore returned NOT_FOUND",
-    );
+    const message = error instanceof Error ? error.message : "Failed to fetch POIs";
+    const isFirestoreNotFound = message.includes("Firestore returned NOT_FOUND");
 
     return NextResponse.json(
       {
@@ -23,7 +18,7 @@ export async function GET() {
           ? "Firestore database not found. Verify FIRESTORE_PROJECT_ID/FIRESTORE_DATABASE_ID or create a Firestore database in the selected project."
           : "Failed to fetch POIs",
       },
-      { status: isFirestoreNotFound ? 503 : 500 },
+      { status: isFirestoreNotFound ? 503 : 500 }
     );
   }
 }

@@ -5,7 +5,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import passport from "passport";
 
 import { buildAuthCookieHeader, createSessionToken } from "@/lib/auth";
-import { createUser, getUserByEmail } from "@/lib/firestore-repositories";
+import { createUser, getUserByEmail } from "@/repositories/user.repository";
 import {
   GOOGLE_STRATEGY_NAME,
   initializeGooglePassport,
