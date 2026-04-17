@@ -247,6 +247,39 @@ Open `http://localhost:3000`.
 - `npm run lint`: run ESLint.
 - `npm run build`: build production app (`next build --webpack`).
 - `npm run start`: run production server.
+- `npm run test` / `npm run test:e2e`: run Playwright end-to-end tests.
+- `npm run test:e2e:headed`: run e2e tests in headed mode.
+- `npm run test:e2e:ui`: open the Playwright UI runner.
+- `npm run test:e2e:debug`: run tests in debug mode.
+- `npm run test:e2e:report`: open the generated Playwright HTML report.
+
+## End-to-End Testing (Playwright)
+
+This repository includes a production-ready Playwright suite under `tests/e2e`.
+
+Coverage includes:
+
+- Auth flows (`/login`, `/register`, logout behavior).
+- Route entry points and landing-page CTAs.
+- Dashboard overlay controls with deterministic realtime/network mocks.
+- Queue analytics rendering and fallback handling.
+- Alert feed filtering and error states.
+- Profile rendering with and without a valid session.
+- Admin RBAC and operations console workflows.
+
+Testing approach:
+
+- Hybrid mocking strategy for unstable dependencies (`/api/stream`, Google Maps network, TTS/Vertex endpoints) while keeping core page routing/session behavior realistic.
+- Browser matrix: Chromium, Firefox, and WebKit.
+- Automatic traces/screenshots/videos on failure or retry.
+
+Run locally:
+
+```bash
+npm run test:e2e
+```
+
+The Playwright config starts the Next.js dev server automatically using `npm run dev`.
 
 ## Security Hardening Roadmap
 
