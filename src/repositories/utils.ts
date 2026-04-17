@@ -27,19 +27,30 @@ export function asBoolean(value: unknown, fallback = false): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
+type FirestoreTimestampLike = {
+  toDate: () => Date;
+};
+
+function isFirestoreTimestampLike(
+  value: unknown,
+): value is FirestoreTimestampLike {
+  if (!isRecord(value) || !("toDate" in value)) {
+    return false;
+  }
+
+  return typeof value.toDate === "function";
+}
+
 export function asISODate(value: unknown): string {
   if (typeof value === "string") return value;
-  if (
-    value &&
-    typeof value === "object" &&
-    "toDate" in value &&
-    typeof (value as any).toDate === "function"
-  ) {
-    const converted = (value as { toDate: () => Date }).toDate();
+
+  if (isFirestoreTimestampLike(value)) {
+    const converted = value.toDate();
     if (converted instanceof Date && !Number.isNaN(converted.valueOf())) {
       return converted.toISOString();
     }
   }
+
   return new Date().toISOString();
 }
 

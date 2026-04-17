@@ -138,12 +138,14 @@ flowchart TD
 
 ### Reliability, Testing, and Production Readiness
 
-1. End-to-end Playwright suite across Chromium, Firefox, and WebKit.
-2. E2E coverage for auth, dashboard, queues, alerts, profile, and admin workflows.
-3. Deterministic network mocking for maps, stream, and cloud endpoint behavior.
-4. Retry, trace, screenshot, and video capture for dependable CI diagnostics.
-5. Defensive API and UI fallback states for degraded external dependencies.
-6. PWA readiness for mobile-first venue usage patterns.
+1. Jest-based unit and API route tests with coverage reporting for fast feedback in CI.
+2. End-to-end Playwright suite across Chromium, Firefox, and WebKit.
+3. E2E coverage for auth, dashboard, queues, alerts, profile, and admin workflows.
+4. Deterministic network mocking for maps, stream, and cloud endpoint behavior.
+5. Retry, trace, screenshot, and video capture for dependable CI diagnostics.
+6. Defensive API and UI fallback states for degraded external dependencies.
+7. PWA readiness for mobile-first venue usage patterns.
+8. Accessibility hardening validated with axe-core scans across core routes and Lighthouse accessibility score of 100 on key routes.
 
 ## Product Routes
 
@@ -261,13 +263,41 @@ Open http://localhost:3000.
 2. npm run build: Build production bundle.
 3. npm run start: Start production server.
 4. npm run lint: Run ESLint.
-5. npm run test or npm run test:e2e: Run Playwright e2e suite.
-6. npm run test:e2e:headed: Run e2e in headed mode.
-7. npm run test:e2e:ui: Open Playwright UI runner.
-8. npm run test:e2e:debug: Run e2e in debug mode.
-9. npm run test:e2e:report: Open Playwright HTML report.
+5. npm run test: Run Jest unit + API tests.
+6. npm run test:unit: Run unit tests only.
+7. npm run test:api: Run API route tests only.
+8. npm run test:coverage: Run unit + API tests with coverage output.
+9. npm run test:e2e: Run Playwright e2e suite.
+10. npm run test:e2e:headed: Run e2e in headed mode.
+11. npm run test:e2e:ui: Open Playwright UI runner.
+12. npm run test:e2e:debug: Run e2e in debug mode.
+13. npm run test:e2e:report: Open Playwright HTML report.
 
 ## Testing
+
+Run unit + API tests:
+
+```bash
+npm run test
+```
+
+Run unit tests only:
+
+```bash
+npm run test:unit
+```
+
+Run API route tests only:
+
+```bash
+npm run test:api
+```
+
+Generate coverage report (output in ./coverage):
+
+```bash
+npm run test:coverage
+```
 
 Run all end-to-end tests:
 
@@ -275,15 +305,17 @@ Run all end-to-end tests:
 npm run test:e2e
 ```
 
-Current e2e suites validate:
+Current automated suites validate:
 
-1. Home route and CTA navigation.
-2. Login, registration, and logout behavior.
-3. Dashboard controls and route guidance behavior.
-4. Queue analytics rendering and failure fallback.
-5. Alerts feed active/all/error states.
-6. Profile behavior with and without valid session.
-7. Admin RBAC and cloud-assisted operations flows.
+1. Unit-level auth and repository utility edge cases.
+2. API login route behavior for payload validation, invalid credentials, and successful cookie-backed session setup.
+3. Home route and CTA navigation.
+4. Login, registration, and logout behavior.
+5. Dashboard controls and route guidance behavior.
+6. Queue analytics rendering and failure fallback.
+7. Alerts feed active/all/error states.
+8. Profile behavior with and without valid session.
+9. Admin RBAC and cloud-assisted operations flows.
 
 ## Summary
 
