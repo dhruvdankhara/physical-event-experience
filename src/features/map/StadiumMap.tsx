@@ -242,7 +242,7 @@ export function StadiumMap() {
     null,
   );
 
-  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
   const hasGoogleMapsApiKey = Boolean(
     googleMapsApiKey &&
     googleMapsApiKey.length > 10 &&
@@ -811,7 +811,10 @@ export function StadiumMap() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="seat-query" className="text-xs font-semibold uppercase tracking-wide text-slate-300">
+              <label
+                htmlFor="seat-query"
+                className="text-xs font-semibold uppercase tracking-wide text-slate-300"
+              >
                 Seat / Block
               </label>
               <Input
@@ -928,8 +931,7 @@ export function StadiumMap() {
           <div className="max-w-lg rounded-xl border border-red-300/40 bg-red-950/55 px-5 py-4 text-red-100">
             <p className="font-semibold">Google Maps API key is missing.</p>
             <p className="mt-1 text-sm text-red-100/90">
-              Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local and restart the
-              dev server.
+              Add GOOGLE_MAPS_API_KEY in .env.local and restart the dev server.
             </p>
           </div>
         </div>

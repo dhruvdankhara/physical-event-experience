@@ -239,23 +239,23 @@ Open http://localhost:3000.
 
 ## Environment Variables
 
-| Variable                        | Required | Purpose                                |
-| ------------------------------- | -------- | -------------------------------------- |
-| NEXT_PUBLIC_GOOGLE_MAPS_API_KEY | Yes      | Client-side stadium map rendering      |
-| AUTH_JWT_SECRET                 | Yes      | JWT signing secret                     |
-| AUTH_COOKIE_NAME                | Optional | Session cookie override                |
-| GOOGLE_OAUTH_CLIENT_ID          | Yes      | Google OAuth client ID                 |
-| GOOGLE_OAUTH_CLIENT_SECRET      | Yes      | Google OAuth client secret             |
-| GOOGLE_OAUTH_CALLBACK_URL       | Yes      | OAuth callback URL                     |
-| GOOGLE_ANALYTICS_PROPERTY_ID    | Yes      | GA4 property ID for analytics endpoint |
-| GOOGLE_CLOUD_PROJECT_ID         | Yes      | Google Cloud project context           |
-| FIRESTORE_PROJECT_ID            | Optional | Firestore project override             |
-| FIRESTORE_DATABASE_ID           | Optional | Firestore database override            |
-| GOOGLE_CLOUD_LOCATION           | Yes      | Vertex region                          |
-| GOOGLE_VERTEX_MODEL             | Yes      | Vertex model name                      |
-| GOOGLE_TTS_LANGUAGE_CODE        | Yes      | Default TTS language                   |
-| GOOGLE_TTS_VOICE_NAME           | Yes      | Default TTS voice                      |
-| GOOGLE_APPLICATION_CREDENTIALS  | Optional | Local ADC credential file path         |
+| Variable                       | Required | Purpose                                |
+| ------------------------------ | -------- | -------------------------------------- |
+| GOOGLE_MAPS_API_KEY            | Yes      | Client-side stadium map rendering      |
+| AUTH_JWT_SECRET                | Yes      | JWT signing secret                     |
+| AUTH_COOKIE_NAME               | Optional | Session cookie override                |
+| GOOGLE_OAUTH_CLIENT_ID         | Yes      | Google OAuth client ID                 |
+| GOOGLE_OAUTH_CLIENT_SECRET     | Yes      | Google OAuth client secret             |
+| GOOGLE_OAUTH_CALLBACK_URL      | Yes      | OAuth callback URL                     |
+| GOOGLE_ANALYTICS_PROPERTY_ID   | Yes      | GA4 property ID for analytics endpoint |
+| GOOGLE_CLOUD_PROJECT_ID        | Yes      | Google Cloud project context           |
+| FIRESTORE_PROJECT_ID           | Optional | Firestore project override             |
+| FIRESTORE_DATABASE_ID          | Optional | Firestore database override            |
+| GOOGLE_CLOUD_LOCATION          | Yes      | Vertex region                          |
+| GOOGLE_VERTEX_MODEL            | Yes      | Vertex model name                      |
+| GOOGLE_TTS_LANGUAGE_CODE       | Yes      | Default TTS language                   |
+| GOOGLE_TTS_VOICE_NAME          | Yes      | Default TTS voice                      |
+| GOOGLE_APPLICATION_CREDENTIALS | Optional | Local ADC credential file path         |
 
 ## Available Scripts
 
