@@ -7,8 +7,7 @@ import {
   setAuthCookie,
   type SessionTokenClaims,
 } from "@/lib/auth";
-import connectDB from "@/lib/db";
-import User from "@/models/User";
+import { getUserByEmail } from "@/lib/firestore-repositories";
 
 export const runtime = "nodejs";
 
@@ -16,23 +15,6 @@ const LoginSchema = z.object({
   email: z.string().trim().email().toLowerCase(),
   password: z.string().min(1).max(128),
 });
-
-function toStringId(value: unknown) {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "toString" in value &&
-    typeof value.toString === "function"
-  ) {
-    return value.toString();
-  }
-
-  return "";
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,9 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await connectDB();
-
-    const user = await User.findOne({ email: parsed.data.email });
+    const user = await getUserByEmail(parsed.data.email);
 
     if (!user) {
       return NextResponse.json(
@@ -73,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     const claims: SessionTokenClaims = {
-      sub: toStringId(user._id),
+      sub: user._id,
       email: user.email,
       role: user.role,
       name: user.name,

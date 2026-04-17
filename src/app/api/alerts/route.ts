@@ -2,8 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { requireSession } from "@/lib/auth";
-import connectDB from "@/lib/db";
-import Alert from "@/models/Alert";
+import { createAlert, listAlerts } from "@/lib/firestore-repositories";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,12 +17,7 @@ const AlertCreateSchema = z.object({
 
 export async function GET() {
   try {
-    await connectDB();
-
-    const alerts = await Alert.find({})
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean();
+    const alerts = await listAlerts(50);
 
     return NextResponse.json({ alerts }, { status: 200 });
   } catch (error) {
@@ -56,9 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await connectDB();
-
-    const created = await Alert.create({
+    const created = await createAlert({
       ...parsed.data,
       createdBy: auth.session.sub,
     });

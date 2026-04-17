@@ -1,39 +1,11 @@
-import connectDB from "@/lib/db";
-import POI from "@/models/POI";
+import {
+  listPOIQueueState,
+  type POIStatus,
+} from "@/lib/firestore-repositories";
 import type { POIRealtimePatchEvent } from "@/features/map/poi-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-type POIStatus = "OPEN" | "CLOSED" | "AT_CAPACITY";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function toStatus(value: unknown): POIStatus | undefined {
-  if (value === "OPEN" || value === "CLOSED" || value === "AT_CAPACITY") {
-    return value;
-  }
-
-  return undefined;
-}
-
-function toNumber(value: unknown): number | undefined {
-  return typeof value === "number" ? value : undefined;
-}
-
-function toStringId(value: unknown): string | undefined {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (isRecord(value) && typeof value.toString === "function") {
-    return value.toString();
-  }
-
-  return undefined;
-}
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && typeof error.message === "string") {
@@ -49,64 +21,12 @@ function wait(milliseconds: number) {
   });
 }
 
-function buildPatchFromChange(change: unknown): POIRealtimePatchEvent | null {
-  if (!isRecord(change)) {
-    return null;
-  }
-
-  const fullDocument = isRecord(change["fullDocument"])
-    ? change["fullDocument"]
-    : null;
-
-  const updateDescription = isRecord(change["updateDescription"])
-    ? change["updateDescription"]
-    : null;
-
-  const documentKey = isRecord(change["documentKey"])
-    ? change["documentKey"]
-    : null;
-
-  const updatedFields =
-    updateDescription && isRecord(updateDescription.updatedFields)
-      ? updateDescription.updatedFields
-      : null;
-
-  const poiId = toStringId(fullDocument?._id) ?? toStringId(documentKey?._id);
-
-  if (!poiId) {
-    return null;
-  }
-
-  const waitFromDoc = toNumber(fullDocument?.currentWaitTime);
-  const waitFromPatch = toNumber(updatedFields?.currentWaitTime);
-  const statusFromDoc = toStatus(fullDocument?.status);
-  const statusFromPatch = toStatus(updatedFields?.status);
-
-  const currentWaitTime = waitFromPatch ?? waitFromDoc;
-  const status = statusFromPatch ?? statusFromDoc;
-
-  if (currentWaitTime === undefined && status === undefined) {
-    return null;
-  }
-
-  return {
-    type: "poi.wait-time.patch",
-    poiId,
-    timestamp: new Date().toISOString(),
-    ...(currentWaitTime !== undefined ? { currentWaitTime } : {}),
-    ...(status !== undefined ? { status } : {}),
-  };
-}
-
 export async function GET(request: Request) {
-  await connectDB();
-
   const encoder = new TextEncoder();
   let heartbeat: ReturnType<typeof setInterval> | null = null;
-  let changeStream: ReturnType<typeof POI.watch> | null = null;
   let isClosed = false;
 
-  const cleanup = async () => {
+  const cleanup = () => {
     if (isClosed) {
       return;
     }
@@ -116,11 +36,6 @@ export async function GET(request: Request) {
     if (heartbeat) {
       clearInterval(heartbeat);
       heartbeat = null;
-    }
-
-    if (changeStream) {
-      await changeStream.close().catch(() => undefined);
-      changeStream = null;
     }
   };
 
@@ -137,65 +52,59 @@ export async function GET(request: Request) {
       request.signal.addEventListener(
         "abort",
         () => {
-          void cleanup().finally(() => {
-            try {
-              controller.close();
-            } catch {
-              // No-op: stream may already be closed.
-            }
-          });
+          cleanup();
+
+          try {
+            controller.close();
+          } catch {
+            // No-op: stream may already be closed.
+          }
         },
         { once: true },
       );
 
-      const runPollingFallback = async (reason: string) => {
-        emitData({
-          type: "poi.wait-time.error",
-          timestamp: new Date().toISOString(),
-          reason,
-        });
+      const snapshot = new Map<
+        string,
+        { currentWaitTime: number; status: POIStatus }
+      >();
 
-        const snapshot = new Map<
-          string,
-          { currentWaitTime?: number; status?: POIStatus }
-        >();
+      try {
+        enqueue(": connected\n\n");
+
+        heartbeat = setInterval(() => {
+          if (isClosed) {
+            return;
+          }
+
+          try {
+            enqueue(": keep-alive\n\n");
+          } catch {
+            // If enqueue fails, stream teardown will happen via abort/cancel paths.
+          }
+        }, 25000);
 
         while (!isClosed && !request.signal.aborted) {
           try {
-            const poiDocs = await POI.find({})
-              .select("_id currentWaitTime status")
-              .lean();
-
+            const poiRows = await listPOIQueueState();
             const seenIds = new Set<string>();
 
-            for (const poiDoc of poiDocs) {
-              const poiRecord = isRecord(poiDoc) ? poiDoc : null;
+            for (const row of poiRows) {
+              seenIds.add(row._id);
 
-              if (!poiRecord) {
-                continue;
-              }
+              const previous = snapshot.get(row._id);
 
-              const poiId = toStringId(poiRecord._id);
-
-              if (!poiId) {
-                continue;
-              }
-
-              seenIds.add(poiId);
-
-              const currentWaitTime = toNumber(poiRecord.currentWaitTime);
-              const status = toStatus(poiRecord.status);
-
-              const previous = snapshot.get(poiId);
-
-              snapshot.set(poiId, { currentWaitTime, status });
+              snapshot.set(row._id, {
+                currentWaitTime: row.currentWaitTime,
+                status: row.status,
+              });
 
               if (!previous) {
                 continue;
               }
 
-              const waitChanged = previous.currentWaitTime !== currentWaitTime;
-              const statusChanged = previous.status !== status;
+              const waitChanged =
+                previous.currentWaitTime !== row.currentWaitTime;
+              const statusChanged = previous.status !== row.status;
 
               if (!waitChanged && !statusChanged) {
                 continue;
@@ -203,12 +112,12 @@ export async function GET(request: Request) {
 
               emitData({
                 type: "poi.wait-time.patch",
-                poiId,
+                poiId: row._id,
                 timestamp: new Date().toISOString(),
-                ...(waitChanged && currentWaitTime !== undefined
-                  ? { currentWaitTime }
+                ...(waitChanged
+                  ? { currentWaitTime: row.currentWaitTime }
                   : {}),
-                ...(statusChanged && status !== undefined ? { status } : {}),
+                ...(statusChanged ? { status: row.status } : {}),
               } satisfies POIRealtimePatchEvent);
             }
 
@@ -227,66 +136,8 @@ export async function GET(request: Request) {
 
           await wait(4000);
         }
-      };
-
-      try {
-        enqueue(": connected\n\n");
-
-        heartbeat = setInterval(() => {
-          if (isClosed) {
-            return;
-          }
-
-          try {
-            enqueue(": keep-alive\n\n");
-          } catch {
-            // If enqueue fails, stream teardown will happen via abort/cancel paths.
-          }
-        }, 25000);
-
-        changeStream = POI.watch(
-          [
-            {
-              $match: {
-                operationType: {
-                  $in: ["insert", "update", "replace"],
-                },
-              },
-            },
-          ],
-          { fullDocument: "updateLookup" },
-        );
-
-        const handleChange = (change: unknown) => {
-          const payload = buildPatchFromChange(change);
-
-          if (!payload) {
-            return;
-          }
-
-          emitData(payload);
-        };
-
-        changeStream.on("change", handleChange);
-
-        await new Promise<void>((resolve, reject) => {
-          const handleAbort = () => {
-            changeStream?.off("change", handleChange);
-            resolve();
-          };
-
-          request.signal.addEventListener("abort", handleAbort, { once: true });
-
-          changeStream?.once("error", (error: unknown) => {
-            request.signal.removeEventListener("abort", handleAbort);
-            changeStream?.off("change", handleChange);
-            reject(error);
-          });
-        });
-      } catch (error) {
-        await runPollingFallback(getErrorMessage(error));
       } finally {
-        await cleanup();
+        cleanup();
 
         try {
           controller.close();
@@ -295,8 +146,8 @@ export async function GET(request: Request) {
         }
       }
     },
-    async cancel() {
-      await cleanup();
+    cancel() {
+      cleanup();
     },
   });
 

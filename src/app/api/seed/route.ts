@@ -1,29 +1,20 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import connectDB from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import {
+  type CreatePOIInput,
+  replaceAllPOIs,
+} from "@/lib/firestore-repositories";
 import {
   findBlockById,
   findNearestGate,
   offsetCoordinateByMeters,
   toGeoJSONPoint,
 } from "@/features/map/narendraModiStadiumData";
-import POI from "@/models/POI";
 
 export const runtime = "nodejs";
 
-type SeedPOI = {
-  name: string;
-  type: "RESTROOM" | "CONCESSION" | "MERCH" | "EXIT" | "FIRST_AID";
-  sectionId?: string;
-  blockId?: string;
-  location: {
-    type: "Point";
-    coordinates: [number, number];
-  };
-  currentWaitTime: number;
-  status: "OPEN" | "CLOSED" | "AT_CAPACITY";
-};
+type SeedPOI = CreatePOIInput;
 
 function locationForBlock(blockId: string, northMeters = 0, eastMeters = 0) {
   const block = findBlockById(blockId);
@@ -213,18 +204,12 @@ export async function GET(request: NextRequest) {
       return auth.error;
     }
 
-    await connectDB();
-
-    // 1. Clear existing POIs to prevent duplicates on multiple clicks
-    await POI.deleteMany({});
-
-    // 2. Insert the mock data
-    await POI.insertMany(mockPOIs);
+    const insertedCount = await replaceAllPOIs(mockPOIs);
 
     return NextResponse.json(
       {
         message: "Database seeded successfully with POIs!",
-        count: mockPOIs.length,
+        count: insertedCount,
       },
       { status: 200 },
     );

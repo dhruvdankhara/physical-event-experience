@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { requireSession } from "@/lib/auth";
-import connectDB from "@/lib/db";
+import { listPOIs } from "@/lib/firestore-repositories";
 import {
   buildFallbackWaitTimeInsights,
   generateWaitTimeInsights,
@@ -9,7 +9,6 @@ import {
   isMissingVertexCredentialsError,
   isVertexUnimplementedError,
 } from "@/lib/google/vertex";
-import POI from "@/models/POI";
 
 export const runtime = "nodejs";
 
@@ -21,11 +20,7 @@ export async function POST(request: NextRequest) {
       return auth.error;
     }
 
-    await connectDB();
-
-    const pois = await POI.find({})
-      .select("name type currentWaitTime status sectionId blockId")
-      .lean();
+    const pois = await listPOIs();
 
     const snapshots = pois.map((poi) => ({
       name: poi.name,

@@ -1,52 +1,65 @@
-import mongoose from "mongoose";
+import { Firestore } from "@google-cloud/firestore";
 
-type MongooseCache = {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
+type FirestoreRuntimeConfig = {
+  projectId?: string;
+  databaseId?: string;
 };
 
 declare global {
-  var mongoose: MongooseCache | undefined;
+  var firestore: Firestore | undefined;
 }
 
-const globalForMongoose = globalThis as typeof globalThis & {
-  mongoose?: MongooseCache;
+const globalForFirestore = globalThis as typeof globalThis & {
+  firestore?: Firestore;
 };
 
-const MONGODB_URI = process.env.MONGODB_URI;
+function normalizeEnvValue(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
 
-// Global cache to prevent multiple connections in development (HMR)
-const cached: MongooseCache = globalForMongoose.mongoose ?? {
-  conn: null,
-  promise: null,
-};
+  const trimmed = value.trim();
 
-if (!globalForMongoose.mongoose) {
-  globalForMongoose.mongoose = cached;
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    const unquoted = trimmed.slice(1, -1).trim();
+    return unquoted.length > 0 ? unquoted : undefined;
+  }
+
+  return trimmed;
+}
+
+export function getFirestoreRuntimeConfig(): FirestoreRuntimeConfig {
+  const projectId =
+    normalizeEnvValue(process.env.FIRESTORE_PROJECT_ID) ??
+    normalizeEnvValue(process.env.GOOGLE_CLOUD_PROJECT_ID) ??
+    normalizeEnvValue(process.env.GOOGLE_CLOUD_PROJECT) ??
+    normalizeEnvValue(process.env.GCLOUD_PROJECT);
+
+  const databaseId = normalizeEnvValue(process.env.FIRESTORE_DATABASE_ID);
+
+  return {
+    ...(projectId ? { projectId } : {}),
+    ...(databaseId ? { databaseId } : {}),
+  };
+}
+
+function createFirestoreClient() {
+  return new Firestore(getFirestoreRuntimeConfig());
 }
 
 async function connectDB() {
-  if (!MONGODB_URI) {
-    throw new Error(
-      "Please define the MONGODB_URI environment variable inside .env.local",
-    );
+  if (!globalForFirestore.firestore) {
+    globalForFirestore.firestore = createFirestoreClient();
   }
 
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
-  }
-  cached.conn = await cached.promise;
-  return cached.conn;
+  return globalForFirestore.firestore;
 }
 
 export default connectDB;

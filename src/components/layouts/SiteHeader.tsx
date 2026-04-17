@@ -43,6 +43,7 @@ function isActivePath(pathname: string, href: string) {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const safePathname = pathname ?? "/";
   const router = useRouter();
   const queryClient = useQueryClient();
   const { resolvedTheme, setTheme } = useTheme();
@@ -82,7 +83,7 @@ export function SiteHeader() {
 
         <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {visibleLinks.map((link) => {
-            const active = isActivePath(pathname, link.href);
+            const active = isActivePath(safePathname, link.href);
 
             return (
               <Button

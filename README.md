@@ -58,10 +58,11 @@ Security is a primary design focus in this codebase with strong baseline control
 
 - Stateless JWT session architecture with signed tokens.
 - HttpOnly auth cookies, SameSite policy, and secure cookies in production.
+- Google OAuth 2.0 login flow via Passport (`passport-google-oauth20`).
 - Role-based access control (`ATTENDEE`, `STAFF`, `ADMIN`) across APIs and protected pages.
 - Password hashing with bcrypt (cost factor 12).
 - Zod schema validation for authentication and admin payloads.
-- Protected admin operations (`/api/seed`, `/api/trigger-rush`, `/api/tts`, `/api/vertex/wait-times`, alert writes).
+- Protected admin operations (`/api/analytics/overview`, `/api/seed`, `/api/trigger-rush`, `/api/tts`, `/api/vertex/wait-times`, alert writes).
 - Explicit environment validation for critical secrets and cloud configuration.
 
 This gives the platform very strong practical security for real-world venue workflows.
@@ -71,6 +72,7 @@ This gives the platform very strong practical security for real-world venue work
 Stadium Sync is tightly integrated with Google technologies:
 
 - Google Maps JavaScript API: live venue visualization and map interactions.
+- Google Analytics Data API (GA4): secure server-side reporting endpoint for operations insights.
 - Google Cloud Text-to-Speech API: generated operational announcement audio.
 - Google Vertex AI: wait-time analysis, hotspot detection, and intervention recommendations.
 - google-auth-library: secure server-side token access to Google Cloud APIs.
@@ -78,17 +80,17 @@ Stadium Sync is tightly integrated with Google technologies:
 
 ## Technology Stack
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | Next.js 16 (App Router), React 19, TypeScript |
-| UI System | Tailwind CSS v4, shadcn/ui, Radix primitives |
-| Data Layer | MongoDB + Mongoose |
-| State and Data Fetching | Redux Toolkit + TanStack Query |
-| Real-Time Transport | Server-Sent Events (`/api/stream`) |
-| Authentication | JWT (`jose`) + HttpOnly cookie session |
-| Validation | Zod |
-| PWA | next-pwa + manifest + service worker |
-| Google Cloud | Maps JS API, Cloud TTS, Vertex AI, Cloud Run |
+| Layer                   | Technology                                                         |
+| ----------------------- | ------------------------------------------------------------------ |
+| Frontend                | Next.js 16 (App Router), React 19, TypeScript                      |
+| UI System               | Tailwind CSS v4, shadcn/ui, Radix primitives                       |
+| Data Layer              | Google Cloud Firestore                                             |
+| State and Data Fetching | Redux Toolkit + TanStack Query                                     |
+| Real-Time Transport     | Server-Sent Events (`/api/stream`)                                 |
+| Authentication          | JWT (`jose`) + Passport Google OAuth 2.0 + HttpOnly cookie session |
+| Validation              | Zod                                                                |
+| PWA                     | next-pwa + manifest + service worker                               |
+| Google Cloud            | Maps JS API, Cloud TTS, Vertex AI, Cloud Run                       |
 
 ## Production Deployment On Google Cloud Run
 
@@ -115,6 +117,7 @@ src/
 		profile/
 		queues/
 		api/
+			analytics/
 			alerts/
 			auth/
 			poi/
@@ -135,7 +138,6 @@ src/
 	hooks/
 	lib/
 		google/
-	models/
 	store/
 ```
 
@@ -143,7 +145,7 @@ Production-ready characteristics in this codebase:
 
 - Feature-oriented module boundaries for predictable scaling.
 - Shared layout and UI primitives for consistency and velocity.
-- Typed Mongoose models for `User`, `POI`, and `Alert` domains.
+- Typed Firestore repository layer for `User`, `POI`, and `Alert` domains.
 - Separated API route domains for auth, operations, data, and streaming.
 - Global providers for Redux and TanStack Query.
 - App-level error and not-found handling.
@@ -161,24 +163,27 @@ Production-ready characteristics in this codebase:
 
 ## API Snapshot
 
-| Endpoint | Method | Purpose | Access |
-| --- | --- | --- | --- |
-| `/api/auth/register` | POST | Register user and create session | Public |
-| `/api/auth/login` | POST | Login and create session | Public |
-| `/api/auth/logout` | POST | Clear auth cookie | Authenticated |
-| `/api/auth/session` | GET | Resolve current session | Public |
-| `/api/pois` | GET | List POIs and wait-time data | Public |
-| `/api/poi/:id` | GET | Get one POI | Public |
-| `/api/stream` | GET | Real-time wait-time patch stream (SSE) | Public |
-| `/api/seed` | GET | Seed stadium POIs | Staff/Admin |
-| `/api/trigger-rush` | GET | Trigger queue pressure simulation | Staff/Admin |
-| `/api/alerts` | GET | Read alerts | Public |
-| `/api/alerts` | POST | Create alert | Staff/Admin |
-| `/api/alerts/:id` | GET | Read one alert | Public |
-| `/api/alerts/:id` | PATCH | Update alert | Staff/Admin |
-| `/api/alerts/:id` | DELETE | Delete alert | Staff/Admin |
-| `/api/tts` | POST | Generate TTS audio | Staff/Admin |
-| `/api/vertex/wait-times` | POST | Generate queue insights | Staff/Admin |
+| Endpoint                    | Method | Purpose                                  | Access        |
+| --------------------------- | ------ | ---------------------------------------- | ------------- |
+| `/api/auth/register`        | POST   | Register user and create session         | Public        |
+| `/api/auth/login`           | POST   | Login and create session                 | Public        |
+| `/api/auth/google`          | GET    | Start Google OAuth flow                  | Public        |
+| `/api/auth/google/callback` | GET    | Complete Google OAuth and create session | Public        |
+| `/api/auth/logout`          | POST   | Clear auth cookie                        | Authenticated |
+| `/api/auth/session`         | GET    | Resolve current session                  | Public        |
+| `/api/analytics/overview`   | GET    | Read GA4 overview metrics                | Staff/Admin   |
+| `/api/pois`                 | GET    | List POIs and wait-time data             | Public        |
+| `/api/poi/:id`              | GET    | Get one POI                              | Public        |
+| `/api/stream`               | GET    | Real-time wait-time patch stream (SSE)   | Public        |
+| `/api/seed`                 | GET    | Seed stadium POIs                        | Staff/Admin   |
+| `/api/trigger-rush`         | GET    | Trigger queue pressure simulation        | Staff/Admin   |
+| `/api/alerts`               | GET    | Read alerts                              | Public        |
+| `/api/alerts`               | POST   | Create alert                             | Staff/Admin   |
+| `/api/alerts/:id`           | GET    | Read one alert                           | Public        |
+| `/api/alerts/:id`           | PATCH  | Update alert                             | Staff/Admin   |
+| `/api/alerts/:id`           | DELETE | Delete alert                             | Staff/Admin   |
+| `/api/tts`                  | POST   | Generate TTS audio                       | Staff/Admin   |
+| `/api/vertex/wait-times`    | POST   | Generate queue insights                  | Staff/Admin   |
 
 ## Getting Started
 
@@ -186,7 +191,7 @@ Production-ready characteristics in this codebase:
 
 - Node.js 20+
 - npm 10+
-- MongoDB instance
+- Google Cloud project with Firestore enabled
 
 ### Install
 
@@ -218,18 +223,23 @@ Open `http://localhost:3000`.
 
 ## Environment Variables
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `MONGODB_URI` | Yes | MongoDB connection string |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes | Client map rendering |
-| `AUTH_JWT_SECRET` | Yes | JWT signing secret |
-| `AUTH_COOKIE_NAME` | Optional | Session cookie override |
-| `GOOGLE_CLOUD_PROJECT_ID` | Yes | Google Cloud project context |
-| `GOOGLE_CLOUD_LOCATION` | Yes | Cloud region for AI services |
-| `GOOGLE_VERTEX_MODEL` | Yes | Vertex model selection |
-| `GOOGLE_TTS_LANGUAGE_CODE` | Yes | Default TTS language |
-| `GOOGLE_TTS_VOICE_NAME` | Yes | Default TTS voice |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Optional | Local credential file path |
+| Variable                          | Required | Purpose                                                                |
+| --------------------------------- | -------- | ---------------------------------------------------------------------- |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes      | Client map rendering                                                   |
+| `AUTH_JWT_SECRET`                 | Yes      | JWT signing secret                                                     |
+| `AUTH_COOKIE_NAME`                | Optional | Session cookie override                                                |
+| `GOOGLE_OAUTH_CLIENT_ID`          | Yes      | Google OAuth client ID                                                 |
+| `GOOGLE_OAUTH_CLIENT_SECRET`      | Yes      | Google OAuth client secret                                             |
+| `GOOGLE_OAUTH_CALLBACK_URL`       | Yes      | OAuth callback URL registered in Google                                |
+| `GOOGLE_ANALYTICS_PROPERTY_ID`    | Yes      | GA4 property ID used by analytics overview API                         |
+| `GOOGLE_CLOUD_PROJECT_ID`         | Yes      | Firestore and Google API project context                               |
+| `FIRESTORE_PROJECT_ID`            | Optional | Override Firestore project (if different from GOOGLE_CLOUD_PROJECT_ID) |
+| `FIRESTORE_DATABASE_ID`           | Optional | Firestore database ID (`(default)` unless using a named database)      |
+| `GOOGLE_CLOUD_LOCATION`           | Yes      | Cloud region for AI services                                           |
+| `GOOGLE_VERTEX_MODEL`             | Yes      | Vertex model selection                                                 |
+| `GOOGLE_TTS_LANGUAGE_CODE`        | Yes      | Default TTS language                                                   |
+| `GOOGLE_TTS_VOICE_NAME`           | Yes      | Default TTS voice                                                      |
+| `GOOGLE_APPLICATION_CREDENTIALS`  | Optional | Local credential file path                                             |
 
 ## Available Scripts
 

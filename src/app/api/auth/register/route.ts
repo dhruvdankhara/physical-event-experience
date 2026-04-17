@@ -7,8 +7,7 @@ import {
   setAuthCookie,
   type SessionTokenClaims,
 } from "@/lib/auth";
-import connectDB from "@/lib/db";
-import User from "@/models/User";
+import { createUser, getUserByEmail } from "@/lib/firestore-repositories";
 
 export const runtime = "nodejs";
 
@@ -17,23 +16,6 @@ const RegisterSchema = z.object({
   email: z.string().trim().email().toLowerCase(),
   password: z.string().min(8).max(128),
 });
-
-function toStringId(value: unknown) {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "toString" in value &&
-    typeof value.toString === "function"
-  ) {
-    return value.toString();
-  }
-
-  return "";
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,11 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await connectDB();
-
-    const existingUser = await User.findOne({ email: parsed.data.email })
-      .select("_id")
-      .lean();
+    const existingUser = await getUserByEmail(parsed.data.email);
 
     if (existingUser) {
       return NextResponse.json(
@@ -65,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hash(parsed.data.password, 12);
 
-    const user = await User.create({
+    const user = await createUser({
       name: parsed.data.name,
       email: parsed.data.email,
       passwordHash,
@@ -73,7 +51,7 @@ export async function POST(request: NextRequest) {
     });
 
     const claims: SessionTokenClaims = {
-      sub: toStringId(user._id),
+      sub: user._id,
       email: user.email,
       role: user.role,
       name: user.name,

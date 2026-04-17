@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import connectDB from "@/lib/db";
-import POI from "@/models/POI";
+import { getPOIById } from "@/lib/firestore-repositories";
 
 export const runtime = "nodejs";
 
@@ -11,9 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    await connectDB();
-
-    const poi = await POI.findById(id).lean();
+    const poi = await getPOIById(id);
 
     if (!poi) {
       return NextResponse.json({ error: "POI not found." }, { status: 404 });

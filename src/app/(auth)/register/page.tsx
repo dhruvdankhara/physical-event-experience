@@ -113,6 +113,17 @@ export default function RegisterPage() {
                 {isSubmitting ? "Creating account..." : "Create account"}
               </Button>
 
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                asChild
+              >
+                <Link href="/api/auth/google?next=%2Fdashboard">
+                  Continue with Google
+                </Link>
+              </Button>
+
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link

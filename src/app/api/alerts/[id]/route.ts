@@ -2,8 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { requireSession } from "@/lib/auth";
-import connectDB from "@/lib/db";
-import Alert from "@/models/Alert";
+import {
+  deleteAlertById,
+  getAlertById,
+  updateAlertById,
+} from "@/lib/firestore-repositories";
 
 export const runtime = "nodejs";
 
@@ -25,9 +28,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    await connectDB();
-
-    const alert = await Alert.findById(id).lean();
+    const alert = await getAlertById(id);
 
     if (!alert) {
       return NextResponse.json({ error: "Alert not found." }, { status: 404 });
@@ -68,11 +69,7 @@ export async function PATCH(
       );
     }
 
-    await connectDB();
-
-    const updated = await Alert.findByIdAndUpdate(id, parsed.data, {
-      returnDocument: "after",
-    }).lean();
+    const updated = await updateAlertById(id, parsed.data);
 
     if (!updated) {
       return NextResponse.json({ error: "Alert not found." }, { status: 404 });
@@ -100,9 +97,7 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
-    await connectDB();
-
-    const deleted = await Alert.findByIdAndDelete(id).lean();
+    const deleted = await deleteAlertById(id);
 
     if (!deleted) {
       return NextResponse.json({ error: "Alert not found." }, { status: 404 });

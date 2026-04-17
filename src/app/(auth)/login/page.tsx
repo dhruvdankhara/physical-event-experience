@@ -26,7 +26,9 @@ function LoginPageContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const nextRoute = searchParams.get("next") ?? "/dashboard";
+  const nextRoute = searchParams?.get("next") ?? "/dashboard";
+  const oauthError = searchParams?.get("error");
+  const googleAuthHref = `/api/auth/google?next=${encodeURIComponent(nextRoute)}`;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -103,6 +105,19 @@ function LoginPageContent() {
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                asChild
+              >
+                <Link href={googleAuthHref}>Continue with Google</Link>
+              </Button>
+
+              {oauthError && !errorMessage && (
+                <Alert variant="destructive">{oauthError}</Alert>
+              )}
 
               <div className="flex items-center justify-between text-sm">
                 <Link

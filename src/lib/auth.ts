@@ -10,7 +10,7 @@ export type SessionTokenClaims = {
   name: string;
 };
 
-const SESSION_TTL_SECONDS = 60 * 60 * 8;
+export const AUTH_SESSION_TTL_SECONDS = 60 * 60 * 8;
 export const AUTH_COOKIE_NAME =
   process.env.AUTH_COOKIE_NAME ?? "stadium_sync_session";
 
@@ -28,7 +28,7 @@ function authSecret() {
 
 export async function createSessionToken(
   claims: SessionTokenClaims,
-  ttlSeconds = SESSION_TTL_SECONDS,
+  ttlSeconds = AUTH_SESSION_TTL_SECONDS,
 ) {
   return await new SignJWT({
     email: claims.email,
@@ -77,8 +77,24 @@ export function setAuthCookie(response: NextResponse, token: string) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: SESSION_TTL_SECONDS,
+    maxAge: AUTH_SESSION_TTL_SECONDS,
   });
+}
+
+export function buildAuthCookieHeader(token: string) {
+  const cookieParts = [
+    `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "HttpOnly",
+    "Path=/",
+    "SameSite=Lax",
+    `Max-Age=${AUTH_SESSION_TTL_SECONDS}`,
+  ];
+
+  if (process.env.NODE_ENV === "production") {
+    cookieParts.push("Secure");
+  }
+
+  return cookieParts.join("; ");
 }
 
 export function clearAuthCookie(response: NextResponse) {
