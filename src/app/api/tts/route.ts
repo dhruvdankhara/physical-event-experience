@@ -49,10 +49,7 @@ export async function POST(request: NextRequest) {
     console.error("TTS error:", error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to synthesize speech.",
+        error: "Failed to process text-to-speech request.",
       },
       { status: 500 },
     );

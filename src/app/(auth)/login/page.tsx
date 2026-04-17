@@ -122,13 +122,13 @@ function LoginPageContent() {
               <div className="flex items-center justify-between text-sm">
                 <Link
                   href="/forgot-password"
-                  className="text-primary underline-offset-4 hover:underline"
+                  className="text-primary underline underline-offset-4 hover:no-underline"
                 >
                   Forgot password?
                 </Link>
                 <Link
                   href="/register"
-                  className="text-primary underline-offset-4 hover:underline"
+                  className="text-primary underline underline-offset-4 hover:no-underline"
                 >
                   Create account
                 </Link>

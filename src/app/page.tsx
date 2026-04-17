@@ -48,9 +48,9 @@ export default function Home() {
             <Badge variant="secondary" className="w-fit">
               Stadium Operations Platform
             </Badge>
-            <CardTitle className="font-heading text-3xl leading-tight sm:text-4xl">
+            <h1 className="font-heading text-3xl leading-tight sm:text-4xl">
               Physical Event Experience for 50K+ live attendees.
-            </CardTitle>
+            </h1>
             <CardDescription className="max-w-2xl text-base">
               Stadium Sync unifies map navigation, wait-time telemetry, alerts,
               and Google Cloud intelligence into one fast mobile-first workflow.

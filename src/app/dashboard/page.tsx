@@ -10,10 +10,14 @@ export default function DashboardPage() {
 
   return (
     <SiteShell fullBleed>
-      <main className="relative h-[calc(100dvh-5rem)] min-h-140 w-full overflow-hidden">
+      <h1 className="sr-only">Live Dashboard</h1>
+      <section
+        aria-label="Live stadium map"
+        className="relative h-[calc(100dvh-5rem)] min-h-140 w-full overflow-hidden"
+      >
         <StadiumMap />
         <DashboardOverlay />
-      </main>
+      </section>
     </SiteShell>
   );
 }

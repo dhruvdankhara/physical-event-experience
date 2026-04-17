@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Google Analytics overview error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch Google Analytics overview." },
+      { error: "Failed to fetch Google Analytics overview." },
       { status: 500 }
     );
   }

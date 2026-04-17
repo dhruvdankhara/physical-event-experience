@@ -21,12 +21,12 @@ export async function registerUser(input: CreateUserInput) {
 
 export async function loginUser(email: string, passwordString: string) {
   const user = await getUserByEmail(email);
-  if (!user) {
-    throw new Error("Invalid email or password.");
-  }
+  
+  // A dummy hash with cost factor 12 to match our real hashes
+  const dummyHash = "$2a$12$00000000000000000000000000000000000000000000000000000";
+  const isValid = await compare(passwordString, user ? user.passwordHash : dummyHash);
 
-  const isValid = await compare(passwordString, user.passwordHash);
-  if (!isValid) {
+  if (!user || !isValid) {
     throw new Error("Invalid email or password.");
   }
 

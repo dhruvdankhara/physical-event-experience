@@ -811,10 +811,11 @@ export function StadiumMap() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-300">
+              <label htmlFor="seat-query" className="text-xs font-semibold uppercase tracking-wide text-slate-300">
                 Seat / Block
               </label>
               <Input
+                id="seat-query"
                 value={seatQuery}
                 onChange={(event) => setSeatQuery(event.target.value)}
                 placeholder="Example: J3-R12-S18"
@@ -822,6 +823,8 @@ export function StadiumMap() {
               />
 
               <select
+                id="block-select"
+                aria-label="Select Block"
                 value={selectedBlockId}
                 onChange={(event) => {
                   setSelectedBlockId(event.target.value);

@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Vertex wait-time error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate wait-time insights." },
+      { error: "Failed to generate wait-time insights." },
       { status: 500 }
     );
   }

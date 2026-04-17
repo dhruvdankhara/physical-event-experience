@@ -92,6 +92,7 @@ export function DashboardOverlay() {
                   onChange={(event) =>
                     dispatch(setSearchTerm(event.target.value))
                   }
+                  aria-label="Search food, restrooms, exits"
                   placeholder="Search food, restrooms, exits..."
                   className="h-10 bg-background/85 pl-9 pr-9"
                 />
@@ -100,6 +101,7 @@ export function DashboardOverlay() {
                     type="button"
                     variant="ghost"
                     size="icon-xs"
+                    aria-label="Clear search"
                     className="absolute right-2 top-1/2 -translate-y-1/2"
                     onClick={() => dispatch(setSearchTerm(""))}
                   >
