@@ -109,8 +109,7 @@ export function ChatAssistant() {
 
       if (
         typeof answer !== "string" ||
-        (responseProvider !== "vertex" &&
-          responseProvider !== "local-fallback")
+        (responseProvider !== "vertex" && responseProvider !== "local-fallback")
       ) {
         throw new Error("Unexpected chat response payload.");
       }
