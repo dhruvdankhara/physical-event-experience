@@ -10,7 +10,7 @@ export default function DashboardPage() {
 
   return (
     <SiteShell fullBleed>
-      <main className="relative h-[calc(100dvh-5rem)] min-h-[560px] w-full overflow-hidden">
+      <main className="relative h-[calc(100dvh-5rem)] min-h-140 w-full overflow-hidden">
         <StadiumMap />
         <DashboardOverlay />
       </main>

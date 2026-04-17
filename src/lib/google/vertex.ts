@@ -25,6 +25,16 @@ export type WaitTimeInsights = {
   confidence?: number;
 };
 
+export type StadiumChatHistoryTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type StadiumChatReply = {
+  answer: string;
+  followUps: string[];
+};
+
 const MISSING_VERTEX_CREDENTIALS_CODE = "VERTEX_MISSING_CREDENTIALS";
 const VERTEX_UNIMPLEMENTED_CODE = "VERTEX_UNIMPLEMENTED";
 const VERTEX_INVALID_OUTPUT_CODE = "VERTEX_INVALID_OUTPUT";
@@ -41,6 +51,11 @@ const VertexInsightsSchema = z.object({
   hotspots: z.array(z.string()).default([]),
   recommendations: z.array(z.string()).default([]),
   confidence: z.number().min(0).max(1).optional(),
+});
+
+const VertexChatSchema = z.object({
+  answer: z.string().min(1),
+  followUps: z.array(z.string().min(1)).max(3).default([]),
 });
 
 function extractJsonPayload(text: string) {
@@ -78,6 +93,48 @@ function buildPrompt(snapshots: WaitTimeSnapshot[]) {
     "- confidence: number between 0 and 1.",
     "Input snapshots:",
     JSON.stringify(normalized),
+  ].join("\n");
+}
+
+function buildChatPrompt(params: {
+  question: string;
+  history: StadiumChatHistoryTurn[];
+  snapshots: WaitTimeSnapshot[];
+}) {
+  const normalizedHistory = params.history.slice(-8).map((item) => ({
+    role: item.role,
+    content: item.content.slice(0, 600),
+  }));
+
+  const queueSummary = [...params.snapshots]
+    .filter((snapshot) => snapshot.status !== "CLOSED")
+    .sort((left, right) => right.currentWaitTime - left.currentWaitTime)
+    .slice(0, 8)
+    .map((snapshot) => ({
+      name: snapshot.name,
+      type: snapshot.type,
+      wait: snapshot.currentWaitTime,
+      status: snapshot.status,
+      sectionId: snapshot.sectionId ?? null,
+      blockId: snapshot.blockId ?? null,
+    }));
+
+  return [
+    "You are Stadium Sync Assistant, helping event attendees and operations staff.",
+    "Focus on venue navigation, wait times, amenities, alerts, safety, and event logistics.",
+    "Return strict JSON with this exact shape:",
+    '{"answer":"...","followUps":["..."]}',
+    "Rules:",
+    "- answer: concise and actionable, maximum 120 words.",
+    "- followUps: 0 to 3 short follow-up questions users can ask next.",
+    "- If a question is outside stadium experience, politely redirect to stadium-related help.",
+    "- Never include markdown code fences or any text outside the JSON object.",
+    "Recent conversation history:",
+    JSON.stringify(normalizedHistory),
+    "Live queue snapshot summary:",
+    JSON.stringify(queueSummary),
+    "Latest user question:",
+    params.question,
   ].join("\n");
 }
 
@@ -353,6 +410,72 @@ export function buildFallbackWaitTimeInsights(
   };
 }
 
+export function buildFallbackChatResponse(params: {
+  question: string;
+  snapshots: WaitTimeSnapshot[];
+}): StadiumChatReply {
+  const question = params.question.trim();
+  const normalizedQuestion = question.toLowerCase();
+
+  const busiestOpen = [...params.snapshots]
+    .filter((snapshot) => snapshot.status !== "CLOSED")
+    .sort((left, right) => right.currentWaitTime - left.currentWaitTime)
+    .slice(0, 3);
+
+  const queuePromptRegex =
+    /wait|queue|line|restroom|concession|food|drink|merch|stand/;
+  const navigationPromptRegex =
+    /gate|section|seat|route|navigate|direction|entry|exit/;
+  const safetyPromptRegex =
+    /alert|emergency|safety|security|medical|first aid|weather/;
+
+  if (queuePromptRegex.test(normalizedQuestion) && busiestOpen.length > 0) {
+    const hotspots = busiestOpen
+      .map((snapshot) => `${snapshot.name} (${snapshot.currentWaitTime} min)`)
+      .join(", ");
+
+    return {
+      answer: `Current queue pressure is highest at ${hotspots}. If possible, use nearby alternatives with shorter lines and check the Queues page for live updates before moving.`,
+      followUps: [
+        "Which concession has the shortest queue right now?",
+        "Where are the closest restrooms with lower wait times?",
+      ],
+    };
+  }
+
+  if (navigationPromptRegex.test(normalizedQuestion)) {
+    return {
+      answer:
+        "For the fastest routing, open the live dashboard map and start from your current gate or section. It updates path guidance around congestion so you can avoid crowded corridors.",
+      followUps: [
+        "How do I navigate from my gate to my seat?",
+        "Which exits are usually less crowded after the match?",
+      ],
+    };
+  }
+
+  if (safetyPromptRegex.test(normalizedQuestion)) {
+    return {
+      answer:
+        "For urgent situations, follow active stadium alerts and contact nearest staff immediately. Use the Alerts page for real-time advisories and proceed to marked safe concourse areas when instructed.",
+      followUps: [
+        "What are the latest active alerts?",
+        "Where is the nearest first-aid point?",
+      ],
+    };
+  }
+
+  return {
+    answer:
+      "I can help with stadium navigation, queue strategy, amenities, alerts, and operational guidance. Ask about wait times, gates, exits, or where to find services around your section.",
+    followUps: [
+      "What are the busiest queues right now?",
+      "How can I reach my section faster?",
+      "Where can I find food with lower wait time?",
+    ],
+  };
+}
+
 export async function generateWaitTimeInsights(snapshots: WaitTimeSnapshot[]) {
   if (snapshots.length === 0) {
     return {
@@ -440,6 +563,111 @@ export async function generateWaitTimeInsights(snapshots: WaitTimeSnapshot[]) {
 
   try {
     return VertexInsightsSchema.parse(parsedJson);
+  } catch (error) {
+    throw createInvalidOutputError(
+      error instanceof Error
+        ? `Vertex JSON did not match expected schema: ${error.message}`
+        : "Vertex JSON did not match expected schema.",
+      modelText,
+    );
+  }
+}
+
+export async function generateStadiumChatResponse(params: {
+  question: string;
+  history?: StadiumChatHistoryTurn[];
+  snapshots?: WaitTimeSnapshot[];
+}): Promise<StadiumChatReply> {
+  const question = params.question.trim();
+
+  if (!question) {
+    throw createInvalidOutputError("Chat question cannot be empty.");
+  }
+
+  const canAttemptRemoteVertex =
+    hasExplicitCredentialsPath() ||
+    hasLocalADCFile() ||
+    isGoogleHostedRuntime();
+
+  if (!canAttemptRemoteVertex) {
+    throw createMissingCredentialsError();
+  }
+
+  const snapshots = params.snapshots ?? [];
+  const history = params.history ?? [];
+
+  const config = getGoogleProjectConfig();
+  const accessToken = await getGoogleAccessToken();
+  const prompt = buildChatPrompt({
+    question,
+    history,
+    snapshots,
+  });
+
+  const configuredEndpoint = buildVertexEndpoint(
+    config.projectId,
+    config.location,
+    config.vertexModel,
+  );
+
+  let payload;
+
+  try {
+    payload = await callVertexGenerateContent({
+      endpoint: configuredEndpoint,
+      accessToken,
+      prompt,
+    });
+  } catch (error) {
+    const shouldRetryWithGlobal =
+      config.location !== "global" && isVertexUnimplementedError(error);
+
+    if (!shouldRetryWithGlobal) {
+      throw error;
+    }
+
+    const globalEndpoint = buildVertexEndpoint(
+      config.projectId,
+      "global",
+      config.vertexModel,
+    );
+
+    payload = await callVertexGenerateContent({
+      endpoint: globalEndpoint,
+      accessToken,
+      prompt,
+    });
+  }
+
+  const modelText =
+    payload.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text ?? "")
+      .join("\n")
+      .trim() ?? "";
+
+  if (!modelText) {
+    throw createInvalidOutputError("Vertex returned an empty response body.");
+  }
+
+  let parsedJson: unknown;
+
+  try {
+    parsedJson = JSON.parse(extractJsonPayload(modelText));
+  } catch (error) {
+    if (isVertexInvalidOutputError(error)) {
+      throw error;
+    }
+
+    throw createInvalidOutputError(
+      error instanceof Error
+        ? `Vertex returned malformed JSON: ${error.message}`
+        : "Vertex returned malformed JSON.",
+      modelText,
+    );
+  }
+
+  try {
+    return VertexChatSchema.parse(parsedJson);
   } catch (error) {
     throw createInvalidOutputError(
       error instanceof Error

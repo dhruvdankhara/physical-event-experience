@@ -1,0 +1,209 @@
+.
+├── AGENTS.md
+├── CLAUDE.md
+├── Dockerfile
+├── README.md
+├── components.json
+├── docs
+│   └── Physical-Event-Experience-Architecture.md
+├── eslint.config.mjs
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── playwright.config.ts
+├── postcss.config.mjs
+├── public
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   ├── manifest.json
+│   ├── sw.js
+│   └── workbox-4754cb34.js
+├── skills-lock.json
+├── src
+│   ├── app
+│   │   ├── (auth)
+│   │   │   ├── forgot-password
+│   │   │   │   └── page.tsx
+│   │   │   ├── login
+│   │   │   │   └── page.tsx
+│   │   │   └── register
+│   │   │       └── page.tsx
+│   │   ├── admin
+│   │   │   └── page.tsx
+│   │   ├── alerts
+│   │   │   └── page.tsx
+│   │   ├── api
+│   │   │   ├── alerts
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── analytics
+│   │   │   │   └── overview
+│   │   │   │       └── route.ts
+│   │   │   ├── auth
+│   │   │   │   ├── login
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── logout
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── register
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── session
+│   │   │   │       └── route.ts
+│   │   │   ├── poi
+│   │   │   │   └── [id]
+│   │   │   │       └── route.ts
+│   │   │   ├── pois
+│   │   │   │   └── route.ts
+│   │   │   ├── seed
+│   │   │   │   └── route.ts
+│   │   │   ├── stream
+│   │   │   │   └── route.ts
+│   │   │   ├── trigger-rush
+│   │   │   │   └── route.ts
+│   │   │   ├── tts
+│   │   │   │   └── route.ts
+│   │   │   └── vertex
+│   │   │       └── wait-times
+│   │   │           └── route.ts
+│   │   ├── dashboard
+│   │   │   └── page.tsx
+│   │   ├── error.tsx
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── not-found.tsx
+│   │   ├── page.tsx
+│   │   ├── profile
+│   │   │   └── page.tsx
+│   │   └── queues
+│   │       └── page.tsx
+│   ├── components
+│   │   ├── layouts
+│   │   │   ├── SiteHeader.tsx
+│   │   │   └── SiteShell.tsx
+│   │   ├── providers.tsx
+│   │   └── ui
+│   │       ├── accordion.tsx
+│   │       ├── alert-dialog.tsx
+│   │       ├── alert.tsx
+│   │       ├── aspect-ratio.tsx
+│   │       ├── avatar.tsx
+│   │       ├── badge.tsx
+│   │       ├── breadcrumb.tsx
+│   │       ├── button-group.tsx
+│   │       ├── button.tsx
+│   │       ├── calendar.tsx
+│   │       ├── card.tsx
+│   │       ├── carousel.tsx
+│   │       ├── chart.tsx
+│   │       ├── checkbox.tsx
+│   │       ├── collapsible.tsx
+│   │       ├── combobox.tsx
+│   │       ├── command.tsx
+│   │       ├── context-menu.tsx
+│   │       ├── dialog.tsx
+│   │       ├── direction.tsx
+│   │       ├── drawer.tsx
+│   │       ├── dropdown-menu.tsx
+│   │       ├── empty.tsx
+│   │       ├── field.tsx
+│   │       ├── hover-card.tsx
+│   │       ├── input-group.tsx
+│   │       ├── input-otp.tsx
+│   │       ├── input.tsx
+│   │       ├── item.tsx
+│   │       ├── kbd.tsx
+│   │       ├── label.tsx
+│   │       ├── menubar.tsx
+│   │       ├── native-select.tsx
+│   │       ├── navigation-menu.tsx
+│   │       ├── pagination.tsx
+│   │       ├── popover.tsx
+│   │       ├── progress.tsx
+│   │       ├── radio-group.tsx
+│   │       ├── resizable.tsx
+│   │       ├── scroll-area.tsx
+│   │       ├── select.tsx
+│   │       ├── separator.tsx
+│   │       ├── sheet.tsx
+│   │       ├── sidebar.tsx
+│   │       ├── skeleton.tsx
+│   │       ├── slider.tsx
+│   │       ├── sonner.tsx
+│   │       ├── spinner.tsx
+│   │       ├── switch.tsx
+│   │       ├── table.tsx
+│   │       ├── tabs.tsx
+│   │       ├── textarea.tsx
+│   │       ├── toggle-group.tsx
+│   │       ├── toggle.tsx
+│   │       └── tooltip.tsx
+│   ├── features
+│   │   ├── admin
+│   │   │   └── AdminConsole.tsx
+│   │   ├── alerts
+│   │   │   └── AlertsFeed.tsx
+│   │   ├── map
+│   │   │   ├── DashboardOverlay.tsx
+│   │   │   ├── StadiumMap.tsx
+│   │   │   ├── mock-pois.ts
+│   │   │   ├── narendraModiStadiumData.ts
+│   │   │   └── poi-data.ts
+│   │   └── queues
+│   │       └── QueuesOverview.tsx
+│   ├── hooks
+│   │   ├── use-mobile.ts
+│   │   ├── useAuthSession.ts
+│   │   └── useRealTimeWaitTimes.ts
+│   ├── lib
+│   │   ├── auth.ts
+│   │   ├── db.ts
+│   │   ├── google
+│   │   │   ├── analytics.ts
+│   │   │   ├── auth.ts
+│   │   │   ├── passport.ts
+│   │   │   ├── tts.ts
+│   │   │   └── vertex.ts
+│   │   └── utils.ts
+│   ├── pages
+│   │   └── api
+│   │       └── auth
+│   │           └── google
+│   │               ├── callback.ts
+│   │               └── index.ts
+│   ├── repositories
+│   │   ├── alert.repository.ts
+│   │   ├── poi.repository.ts
+│   │   ├── user.repository.ts
+│   │   └── utils.ts
+│   ├── services
+│   │   ├── alert.service.ts
+│   │   ├── analytics.service.ts
+│   │   ├── auth.service.ts
+│   │   ├── poi.service.ts
+│   │   └── stream.service.ts
+│   ├── store
+│   │   ├── slices
+│   │   │   └── uiSlice.ts
+│   │   └── store.ts
+│   └── types
+│       ├── chat.ts
+│       └── models.ts
+├── structure.txt
+├── tests
+│   ├── e2e
+│   │   ├── admin.spec.ts
+│   │   ├── alerts.spec.ts
+│   │   ├── auth.spec.ts
+│   │   ├── dashboard.spec.ts
+│   │   ├── home.spec.ts
+│   │   ├── profile.spec.ts
+│   │   └── queues.spec.ts
+│   └── fixtures
+│       ├── auth.ts
+│       ├── network.ts
+│       └── test-data.ts
+└── tsconfig.json
+
+56 directories, 151 files
