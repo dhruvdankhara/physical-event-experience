@@ -1,0 +1,24 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "--build-arg"
+      - "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$_NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/nextjs-app"
+      - "."
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/$PROJECT_ID/nextjs-app"]
+
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "nextjs-app"
+      - "--image=gcr.io/$PROJECT_ID/nextjs-app"
+      - "--region=us-central1"
+      - "--platform=managed"
+
+substitutions:
+  _NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ""
