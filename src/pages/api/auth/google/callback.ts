@@ -7,58 +7,15 @@ import passport from "passport";
 import { buildAuthCookieHeader, createSessionToken } from "@/lib/auth";
 import { createUser, getUserByEmail } from "@/repositories/user.repository";
 import {
+  buildGoogleOAuthFailureRedirect,
+  decodeGoogleOAuthState,
+  getFirstQueryValue,
+} from "@/lib/google/oauth-routing";
+import {
   GOOGLE_STRATEGY_NAME,
   initializeGooglePassport,
   type GoogleOAuthUser,
 } from "@/lib/google/passport";
-
-function sanitizeNextPath(value: string | undefined) {
-  if (!value) {
-    return "/dashboard";
-  }
-
-  if (!value.startsWith("/") || value.startsWith("//")) {
-    return "/dashboard";
-  }
-
-  return value;
-}
-
-function getSingleQueryValue(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-
-  return value;
-}
-
-function decodeState(rawState: string | undefined) {
-  if (!rawState) {
-    return "/dashboard";
-  }
-
-  try {
-    const decoded = Buffer.from(rawState, "base64url").toString("utf8");
-    const parsed = JSON.parse(decoded) as { next?: unknown };
-
-    if (typeof parsed.next !== "string") {
-      return "/dashboard";
-    }
-
-    return sanitizeNextPath(parsed.next);
-  } catch {
-    return "/dashboard";
-  }
-}
-
-function buildFailedRedirect(nextPath: string) {
-  const params = new URLSearchParams({
-    next: nextPath,
-    error: "Google sign-in failed. Please try again.",
-  });
-
-  return `/login?${params.toString()}`;
-}
 
 function authenticateGoogleProfile(
   req: NextApiRequest,
@@ -95,8 +52,8 @@ export default async function handler(
     return;
   }
 
-  const stateValue = getSingleQueryValue(req.query.state);
-  const nextPath = decodeState(stateValue);
+  const stateValue = getFirstQueryValue(req.query.state);
+  const nextPath = decodeGoogleOAuthState(stateValue);
 
   try {
     initializeGooglePassport();
@@ -127,7 +84,7 @@ export default async function handler(
     res.redirect(302, nextPath);
   } catch (error) {
     console.error("Google OAuth callback error:", error);
-    res.redirect(302, buildFailedRedirect(nextPath));
+    res.redirect(302, buildGoogleOAuthFailureRedirect(nextPath));
   }
 }
 

@@ -14,14 +14,24 @@ const customJestConfig = {
   },
   modulePathIgnorePatterns: ["<rootDir>/.next/"],
   collectCoverageFrom: [
-    "src/services/auth.service.ts",
+    "src/lib/auth.ts",
+    "src/lib/google/oauth-routing.ts",
     "src/repositories/utils.ts",
+    "src/services/auth.service.ts",
     "src/app/api/auth/login/route.ts",
     "src/app/api/auth/register/route.ts",
     "!**/*.d.ts",
   ],
   coverageDirectory: "<rootDir>/coverage",
   coverageReporters: ["text", "lcov", "html", "json-summary"],
+  coverageThreshold: {
+    global: {
+      statements: 92,
+      branches: 88,
+      functions: 100,
+      lines: 92,
+    },
+  },
 };
 
 export default createJestConfig(customJestConfig);

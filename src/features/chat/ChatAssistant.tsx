@@ -196,8 +196,19 @@ export function ChatAssistant() {
 
       <Card>
         <CardContent className="space-y-4 pt-6">
+          <div className="sr-only" aria-live="polite">
+            {isSubmitting
+              ? "Assistant is generating a response."
+              : `Conversation contains ${messages.length} messages.`}
+          </div>
+
           <ScrollArea className="h-96 rounded-2xl border border-border/70 bg-muted/20">
-            <div className="space-y-3 p-4">
+            <div
+              role="log"
+              aria-live="polite"
+              aria-relevant="additions text"
+              className="space-y-3 p-4"
+            >
               {messages.map((message) => {
                 const isAssistant = message.role === "assistant";
 
@@ -250,19 +261,30 @@ export function ChatAssistant() {
           </ScrollArea>
 
           {warning && (
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+            <div
+              role="status"
+              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+            >
               {warning}
             </div>
           )}
 
           {error && (
-            <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">
+            <div
+              role="alert"
+              className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300"
+            >
               {error}
             </div>
           )}
 
           <form className="space-y-3" onSubmit={handleSubmit}>
+            <label htmlFor="chat-draft" className="sr-only">
+              Ask Stadium Sync a question
+            </label>
             <Textarea
+              id="chat-draft"
+              aria-describedby="chat-draft-hint"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
@@ -276,7 +298,10 @@ export function ChatAssistant() {
             />
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-              <p className="inline-flex items-center gap-1.5">
+              <p
+                id="chat-draft-hint"
+                className="inline-flex items-center gap-1.5"
+              >
                 <CornerDownLeft className="size-3.5" />
                 Press Enter to send, Shift+Enter for a new line.
               </p>

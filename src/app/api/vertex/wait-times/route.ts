@@ -52,7 +52,10 @@ async function fetchVertexInsights(snapshots: WaitTimeSnapshot[]) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
+    const auth = await requireSession(request, {
+      roles: ["STAFF", "ADMIN"],
+      requireTrustedOrigin: true,
+    });
     if (auth.error) return auth.error;
 
     const pois = await getAllPOIs();

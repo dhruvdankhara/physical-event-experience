@@ -56,6 +56,54 @@ async function fetchAlerts() {
   return (await response.json()) as AlertsResponse;
 }
 
+function AlertCards({
+  alerts,
+  emptyDescription,
+}: {
+  alerts: AlertItem[];
+  emptyDescription?: string;
+}) {
+  if (alerts.length === 0) {
+    if (!emptyDescription) {
+      return null;
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No alerts</CardTitle>
+          <CardDescription>{emptyDescription}</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      {alerts.map((alert) => (
+        <Card key={alert._id}>
+          <CardHeader>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle className="text-lg">{alert.title}</CardTitle>
+              <Badge variant="outline" className={severityClass(alert.severity)}>
+                {alert.severity}
+              </Badge>
+              <Badge variant="outline">{label(alert.audience)}</Badge>
+              {!alert.active && <Badge variant="secondary">Archived</Badge>}
+            </div>
+            <CardDescription>
+              {new Date(alert.createdAt).toLocaleString()}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{alert.message}</p>
+          </CardContent>
+        </Card>
+      ))}
+    </>
+  );
+}
+
 export function AlertsFeed() {
   const [tab, setTab] = useState("active");
   const { data, isLoading, isError } = useQuery({
@@ -73,6 +121,11 @@ export function AlertsFeed() {
 
     return alerts;
   }, [data?.alerts, tab]);
+
+  const liveRegionMessage =
+    tab === "active"
+      ? `${filteredAlerts.length} active alerts loaded.`
+      : `${filteredAlerts.length} alerts loaded.`;
 
   if (isLoading) {
     return (
@@ -99,72 +152,27 @@ export function AlertsFeed() {
 
   return (
     <Tabs value={tab} onValueChange={setTab}>
+      <div className="sr-only" aria-live="polite">
+        {liveRegionMessage}
+      </div>
+
       <TabsList variant="line">
         <TabsTrigger value="active">Active Alerts</TabsTrigger>
         <TabsTrigger value="all">All Alerts</TabsTrigger>
       </TabsList>
 
       <TabsContent value="active" className="space-y-3">
-        {filteredAlerts.map((alert) => (
-          <Card key={alert._id}>
-            <CardHeader>
-              <div className="flex flex-wrap items-center gap-2">
-                <CardTitle className="text-lg">{alert.title}</CardTitle>
-                <Badge
-                  variant="outline"
-                  className={severityClass(alert.severity)}
-                >
-                  {alert.severity}
-                </Badge>
-                <Badge variant="outline">{label(alert.audience)}</Badge>
-                {!alert.active && <Badge variant="secondary">Archived</Badge>}
-              </div>
-              <CardDescription>
-                {new Date(alert.createdAt).toLocaleString()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{alert.message}</p>
-            </CardContent>
-          </Card>
-        ))}
-
-        {filteredAlerts.length === 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>No alerts</CardTitle>
-              <CardDescription>
-                There are currently no active stadium-wide announcements.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
+        <AlertCards
+          alerts={filteredAlerts}
+          emptyDescription="There are currently no active stadium-wide announcements."
+        />
       </TabsContent>
 
       <TabsContent value="all" className="space-y-3">
-        {filteredAlerts.map((alert) => (
-          <Card key={alert._id}>
-            <CardHeader>
-              <div className="flex flex-wrap items-center gap-2">
-                <CardTitle className="text-lg">{alert.title}</CardTitle>
-                <Badge
-                  variant="outline"
-                  className={severityClass(alert.severity)}
-                >
-                  {alert.severity}
-                </Badge>
-                <Badge variant="outline">{label(alert.audience)}</Badge>
-                {!alert.active && <Badge variant="secondary">Archived</Badge>}
-              </div>
-              <CardDescription>
-                {new Date(alert.createdAt).toLocaleString()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{alert.message}</p>
-            </CardContent>
-          </Card>
-        ))}
+        <AlertCards
+          alerts={filteredAlerts}
+          emptyDescription="No historical alerts are available yet."
+        />
       </TabsContent>
     </Tabs>
   );

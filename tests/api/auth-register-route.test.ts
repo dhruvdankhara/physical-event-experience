@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 
-import { POST } from "@/app/api/auth/login/route";
+import { POST } from "@/app/api/auth/register/route";
 import { createSessionToken, setAuthCookie } from "@/lib/auth";
-import { loginUser } from "@/services/auth.service";
+import { registerUser } from "@/services/auth.service";
 import type { UserRecord } from "@/types/models";
 
 jest.mock("@/services/auth.service", () => ({
-  loginUser: jest.fn(),
+  registerUser: jest.fn(),
 }));
 
 jest.mock("@/lib/auth", () => ({
@@ -14,7 +14,9 @@ jest.mock("@/lib/auth", () => ({
   setAuthCookie: jest.fn(),
 }));
 
-const mockedLoginUser = loginUser as jest.MockedFunction<typeof loginUser>;
+const mockedRegisterUser = registerUser as jest.MockedFunction<
+  typeof registerUser
+>;
 const mockedCreateSessionToken = createSessionToken as jest.MockedFunction<
   typeof createSessionToken
 >;
@@ -23,7 +25,7 @@ const mockedSetAuthCookie = setAuthCookie as jest.MockedFunction<
 >;
 
 function buildRequest(payload: unknown) {
-  return new NextRequest("http://localhost/api/auth/login", {
+  return new NextRequest("http://localhost/api/auth/register", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -34,9 +36,9 @@ function buildRequest(payload: unknown) {
 
 function buildUser(overrides: Partial<UserRecord> = {}): UserRecord {
   return {
-    _id: "user-1",
-    name: "Jordan Fan",
-    email: "jordan@example.com",
+    _id: "user-2",
+    name: "Riley Fan",
+    email: "riley@example.com",
     passwordHash: "stored-hash",
     role: "ATTENDEE",
     createdAt: "2026-04-17T00:00:00.000Z",
@@ -45,14 +47,14 @@ function buildUser(overrides: Partial<UserRecord> = {}): UserRecord {
   };
 }
 
-describe("POST /api/auth/login", () => {
+describe("POST /api/auth/register", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("returns 400 for invalid payload", async () => {
     const response = await POST(
-      buildRequest({ email: "not-an-email", password: "" }),
+      buildRequest({ name: "A", email: "bad", password: "short" }),
     );
 
     const body = (await response.json()) as {
@@ -61,32 +63,42 @@ describe("POST /api/auth/login", () => {
     };
 
     expect(response.status).toBe(400);
-    expect(body.error).toBe("Invalid login payload.");
+    expect(body.error).toBe("Invalid registration payload.");
     expect(body.details).toBeDefined();
   });
 
-  it("returns 401 when credentials are invalid", async () => {
-    mockedLoginUser.mockRejectedValue(new Error("Invalid email or password."));
+  it("returns 409 when the email is already registered", async () => {
+    mockedRegisterUser.mockRejectedValue(
+      new Error("An account with that email already exists."),
+    );
 
     const response = await POST(
-      buildRequest({ email: "jordan@example.com", password: "wrong" }),
+      buildRequest({
+        name: "Riley Fan",
+        email: "riley@example.com",
+        password: "Secret123!",
+      }),
     );
 
     const body = (await response.json()) as { error: string };
 
-    expect(response.status).toBe(401);
-    expect(body.error).toBe("Invalid email or password.");
+    expect(response.status).toBe(409);
+    expect(body.error).toBe("An account with that email already exists.");
     expect(mockedCreateSessionToken).not.toHaveBeenCalled();
     expect(mockedSetAuthCookie).not.toHaveBeenCalled();
   });
 
-  it("returns 200 and sets auth cookie when login succeeds", async () => {
+  it("returns 201 and sets auth cookie when registration succeeds", async () => {
     const user = buildUser();
-    mockedLoginUser.mockResolvedValue(user);
+    mockedRegisterUser.mockResolvedValue(user);
     mockedCreateSessionToken.mockResolvedValue("session-token");
 
     const response = await POST(
-      buildRequest({ email: user.email, password: "correct-password" }),
+      buildRequest({
+        name: user.name,
+        email: user.email,
+        password: "Secret123!",
+      }),
     );
 
     const body = (await response.json()) as {
@@ -94,8 +106,8 @@ describe("POST /api/auth/login", () => {
       user: { id: string; name: string; email: string; role: string };
     };
 
-    expect(response.status).toBe(200);
-    expect(body.message).toBe("Login successful.");
+    expect(response.status).toBe(201);
+    expect(body.message).toBe("Registration successful.");
     expect(body.user).toEqual({
       id: user._id,
       name: user.name,
@@ -110,19 +122,23 @@ describe("POST /api/auth/login", () => {
     expect(tokenArg).toBe("session-token");
   });
 
-  it("returns 500 when login fails unexpectedly", async () => {
+  it("returns 500 when registration fails unexpectedly", async () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    mockedLoginUser.mockRejectedValue(new Error("database offline"));
+    mockedRegisterUser.mockRejectedValue(new Error("database offline"));
 
     try {
       const response = await POST(
-        buildRequest({ email: "jordan@example.com", password: "any" }),
+        buildRequest({
+          name: "Riley Fan",
+          email: "riley@example.com",
+          password: "Secret123!",
+        }),
       );
 
       const body = (await response.json()) as { error: string };
 
       expect(response.status).toBe(500);
-      expect(body.error).toBe("Failed to log in.");
+      expect(body.error).toBe("Failed to register user.");
     } finally {
       errorSpy.mockRestore();
     }

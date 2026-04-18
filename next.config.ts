@@ -13,6 +13,11 @@ const withPWA = nextPwa({
 const nextConfig: NextConfig = {
   /* config options here */
   output: "standalone",
+  serverExternalPackages: [
+    "@google-cloud/firestore",
+    "@google-cloud/text-to-speech",
+    "google-auth-library",
+  ],
   turbopack: {},
 };
 

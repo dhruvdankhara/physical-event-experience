@@ -89,4 +89,28 @@ describe("auth.service", () => {
     const [, comparedHash] = mockedCompare.mock.calls[0] ?? [];
     expect(comparedHash).toContain("$2a$12$");
   });
+
+  it("returns the user when the password matches", async () => {
+    const user = buildUser();
+    mockedGetUserByEmail.mockResolvedValue(user);
+    mockedCompare.mockResolvedValue(true);
+
+    const result = await loginUser(user.email, "correct-password");
+
+    expect(result).toEqual(user);
+    expect(mockedCompare).toHaveBeenCalledWith(
+      "correct-password",
+      user.passwordHash,
+    );
+  });
+
+  it("rejects login when the password does not match", async () => {
+    const user = buildUser();
+    mockedGetUserByEmail.mockResolvedValue(user);
+    mockedCompare.mockResolvedValue(false);
+
+    await expect(loginUser(user.email, "wrong-password")).rejects.toThrow(
+      "Invalid email or password.",
+    );
+  });
 });

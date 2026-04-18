@@ -242,11 +242,11 @@ export function StadiumMap() {
     null,
   );
 
-  const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const hasGoogleMapsApiKey = Boolean(
     googleMapsApiKey &&
     googleMapsApiKey.length > 10 &&
-    !googleMapsApiKey.includes("your_google_maps_api_key_here"),
+    !googleMapsApiKey.includes("your_NEXT_PUBLIC_GOOGLE_MAPS_API_KEY_here"),
   );
 
   const {
@@ -345,6 +345,26 @@ export function StadiumMap() {
       return right.score - left.score;
     });
   }, [crowdBySection]);
+
+  const liveMapSummary = useMemo(() => {
+    const topSection = sortedSectionCrowd.find((section) => section.poiCount > 0);
+    const topSectionName = topSection
+      ? NARENDRA_MODI_STADIUM_SECTIONS.find(
+          (section) => section.id === topSection.sectionId,
+        )?.name ?? topSection.sectionId
+      : null;
+    const selectedPoiSummary = selectedPoi
+      ? `${selectedPoi.name} is selected with a ${selectedPoi.currentWaitTime} minute wait and ${selectedPoi.status.replaceAll("_", " ")} status.`
+      : "No point of interest is currently selected.";
+    const routeSummary = routeSnapshot
+      ? `${routeSnapshot.summary}. ${routeSnapshot.distanceText}.`
+      : "No walking route is currently drawn.";
+    const crowdSummary = topSectionName
+      ? `${topSectionName} has the highest crowd pressure with an average ${topSection?.avgWaitTime ?? 0} minute wait.`
+      : "No crowd hotspot summary is available yet.";
+
+    return `Map summary. ${filteredPois.length} live stadium points of interest are visible. ${selectedPoiSummary} ${routeSummary} ${crowdSummary}`;
+  }, [filteredPois.length, routeSnapshot, selectedPoi, sortedSectionCrowd]);
 
   const clearRouteGraphics = () => {
     if (routePolylineRef.current) {
@@ -766,11 +786,14 @@ export function StadiumMap() {
 
   return (
     <div className="relative h-full min-h-dvh w-full overflow-hidden bg-slate-950">
-      <div ref={mapContainerRef} className="absolute inset-0" />
+      <div ref={mapContainerRef} aria-hidden="true" className="absolute inset-0" />
+      <div className="sr-only" aria-live="polite">
+        {liveMapSummary}
+      </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-24 z-20 px-3 sm:px-4">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-xl border border-white/20 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 backdrop-blur-sm sm:text-sm">
-          <MapPinned className="h-4 w-4 text-cyan-300" />
+          <MapPinned className="h-4 w-4 text-cyan-300" aria-hidden />
           <span className="font-semibold">{NARENDRA_MODI_STADIUM_NAME}</span>
           <span className="text-slate-300">Motera, Ahmedabad</span>
           <span className="ml-auto text-slate-300">
@@ -783,19 +806,28 @@ export function StadiumMap() {
         <Card className="pointer-events-auto w-full border-white/15 bg-slate-950/85 text-slate-100 ring-white/10 backdrop-blur-sm">
           <CardHeader className="border-b border-white/10">
             <CardTitle className="flex items-center gap-2 text-slate-100">
-              <UsersRound className="h-4 w-4 text-cyan-300" />
+              <UsersRound className="h-4 w-4 text-cyan-300" aria-hidden />
               Stadium Navigation Console
             </CardTitle>
             <CardDescription className="text-slate-300">
               Find seats, locate exits, and monitor section crowd pressure.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 pt-3">
+          <CardContent
+            aria-describedby="stadium-map-controls-help"
+            className="space-y-3 pt-3"
+          >
+            <p id="stadium-map-controls-help" className="sr-only">
+              Use the seat field or block picker to generate a walking route.
+              Staff view reveals the current crowd-pressure summary by section.
+            </p>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
                 size="sm"
                 variant={staffMode ? "secondary" : "default"}
+                aria-pressed={!staffMode}
+                aria-label="Fan view: attendee-focused map controls"
                 onClick={() => setStaffMode(false)}
               >
                 Fan View
@@ -804,6 +836,8 @@ export function StadiumMap() {
                 type="button"
                 size="sm"
                 variant={staffMode ? "default" : "secondary"}
+                aria-pressed={staffMode}
+                aria-label="Staff view: operations and crowd tools"
                 onClick={() => setStaffMode(true)}
               >
                 Staff View
@@ -825,9 +859,14 @@ export function StadiumMap() {
                 className="h-9 border-white/20 bg-slate-900/70 text-slate-100 placeholder:text-slate-400"
               />
 
+              <label
+                htmlFor="block-select"
+                className="text-xs font-semibold uppercase tracking-wide text-slate-300"
+              >
+                Quick Block Select
+              </label>
               <select
                 id="block-select"
-                aria-label="Select Block"
                 value={selectedBlockId}
                 onChange={(event) => {
                   setSelectedBlockId(event.target.value);
@@ -852,7 +891,7 @@ export function StadiumMap() {
                 onClick={handleFindSeatRoute}
                 className="gap-1.5"
               >
-                <Route className="h-3.5 w-3.5" />
+                <Route className="h-3.5 w-3.5" aria-hidden />
                 Find Seat Route
               </Button>
               <Button
@@ -867,7 +906,11 @@ export function StadiumMap() {
             </div>
 
             {routeSnapshot && (
-              <div className="rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-50">
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-50"
+              >
                 <p className="font-semibold">{routeSnapshot.summary}</p>
                 <p className="mt-1 text-cyan-100/90">
                   {routeSnapshot.distanceText}
@@ -878,7 +921,7 @@ export function StadiumMap() {
             {staffMode && (
               <div className="space-y-2 rounded-lg border border-white/15 bg-slate-900/60 p-2.5">
                 <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-300">
-                  <ShieldAlert className="h-3.5 w-3.5 text-amber-300" />
+                  <ShieldAlert className="h-3.5 w-3.5 text-amber-300" aria-hidden />
                   Crowd Detection
                 </p>
 
@@ -918,7 +961,11 @@ export function StadiumMap() {
       </div>
 
       {isLoading && (
-        <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/30">
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/30"
+        >
           <div className="flex items-center gap-2 rounded-full border border-white/20 bg-black/70 px-4 py-2 text-sm text-white">
             <LoaderCircle className="h-4 w-4 animate-spin" />
             Loading Narendra Modi Stadium POIs...
@@ -927,18 +974,24 @@ export function StadiumMap() {
       )}
 
       {!hasGoogleMapsApiKey && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 px-6">
+        <div
+          role="alert"
+          className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 px-6"
+        >
           <div className="max-w-lg rounded-xl border border-red-300/40 bg-red-950/55 px-5 py-4 text-red-100">
             <p className="font-semibold">Google Maps API key is missing.</p>
             <p className="mt-1 text-sm text-red-100/90">
-              Add GOOGLE_MAPS_API_KEY in .env.local and restart the dev server.
+              Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local and restart the dev server.
             </p>
           </div>
         </div>
       )}
 
       {hasGoogleMapsApiKey && mapErrorMessage && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 px-6">
+        <div
+          role="alert"
+          className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 px-6"
+        >
           <div className="flex max-w-lg items-start gap-2 rounded-xl border border-red-300/40 bg-red-950/60 px-5 py-4 text-red-100">
             <AlertTriangle className="mt-0.5 h-4 w-4" />
             <div>
@@ -950,7 +1003,10 @@ export function StadiumMap() {
       )}
 
       {hasGoogleMapsApiKey && isError && (
-        <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/50 px-6">
+        <div
+          role="alert"
+          className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/50 px-6"
+        >
           <div className="flex items-center gap-2 rounded-xl border border-amber-300/40 bg-amber-950/50 px-5 py-4 text-amber-100">
             <AlertTriangle className="h-4 w-4" />
             Failed to load POIs from /api/pois.

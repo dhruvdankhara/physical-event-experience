@@ -5,9 +5,12 @@ import { triggerWaitTimeIncrease } from "@/services/poi.service";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
+    const auth = await requireSession(request, {
+      roles: ["STAFF", "ADMIN"],
+      requireTrustedOrigin: true,
+    });
     if (auth.error) return auth.error;
 
     const updatedPoi = await triggerWaitTimeIncrease(10);

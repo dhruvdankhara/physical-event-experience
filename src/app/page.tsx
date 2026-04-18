@@ -102,7 +102,7 @@ export default function Home() {
             <Card key={card.title}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Icon className="size-4 text-primary" />
+                  <Icon className="size-4 text-primary" aria-hidden />
                   {card.title}
                 </CardTitle>
                 <CardDescription>{card.description}</CardDescription>

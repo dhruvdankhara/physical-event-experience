@@ -19,7 +19,9 @@ const ChatRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireSession(request);
+    const auth = await requireSession(request, {
+      requireTrustedOrigin: true,
+    });
     if (auth.error) {
       return auth.error;
     }

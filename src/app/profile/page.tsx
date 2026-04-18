@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 
 import { SiteShell } from "@/components/layouts/SiteShell";
-import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getServerSession } from "@/lib/server-session";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
-  const session = token ? await verifySessionToken(token) : null;
+  const session = await getServerSession();
 
   return (
     <SiteShell

@@ -64,12 +64,12 @@ export function AdminConsole() {
     return Math.round(vertexData.insights.confidence * 100);
   }, [vertexData]);
 
-  const runOperation = async (url: string) => {
+  const runOperation = async (url: string, method: "POST" = "POST") => {
     setOpsBusy(true);
     setOpsMessage(null);
 
     try {
-      const response = await fetch(url, { method: "GET" });
+      const response = await fetch(url, { method });
       const payload = (await response.json()) as {
         message?: string;
         error?: string;
@@ -218,7 +218,11 @@ export function AdminConsole() {
             </Button>
           </div>
           {opsMessage && (
-            <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-sm">
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-sm"
+            >
               {opsMessage}
             </div>
           )}
@@ -290,7 +294,9 @@ export function AdminConsole() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <Label htmlFor="tts-text">Announcement Script</Label>
           <Textarea
+            id="tts-text"
             value={ttsText}
             onChange={(event) => setTtsText(event.target.value)}
             rows={4}
@@ -298,7 +304,14 @@ export function AdminConsole() {
           <Button onClick={handleTTS} disabled={ttsBusy}>
             {ttsBusy ? "Generating..." : "Generate Announcement Audio"}
           </Button>
-          {ttsUrl && <audio controls src={ttsUrl} className="w-full" />}
+          {ttsUrl && (
+            <audio
+              controls
+              src={ttsUrl}
+              aria-label="Generated stadium announcement preview"
+              className="w-full"
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -316,13 +329,19 @@ export function AdminConsole() {
           </Button>
 
           {vertexError && (
-            <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">
+            <div
+              role="alert"
+              className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300"
+            >
               {vertexError}
             </div>
           )}
 
           {vertexData && (
-            <div className="space-y-3 rounded-xl border border-border/70 bg-muted/30 p-3">
+            <div
+              aria-live="polite"
+              className="space-y-3 rounded-xl border border-border/70 bg-muted/30 p-3"
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge
                   variant={
@@ -344,7 +363,10 @@ export function AdminConsole() {
               </div>
 
               {vertexData.warning && (
-                <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+                <div
+                  role="status"
+                  className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200"
+                >
                   {vertexData.warning}
                 </div>
               )}

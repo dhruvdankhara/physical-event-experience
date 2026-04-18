@@ -2,28 +2,13 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import passport from "passport";
 
 import {
+  buildGoogleOAuthState,
+  sanitizeOAuthRedirectPath,
+} from "@/lib/google/oauth-routing";
+import {
   GOOGLE_STRATEGY_NAME,
   initializeGooglePassport,
 } from "@/lib/google/passport";
-
-function sanitizeNextPath(input: string | string[] | undefined) {
-  const value = Array.isArray(input) ? input[0] : input;
-
-  if (!value || typeof value !== "string") {
-    return "/dashboard";
-  }
-
-  if (!value.startsWith("/") || value.startsWith("//")) {
-    return "/dashboard";
-  }
-
-  return value;
-}
-
-function buildState(nextPath: string) {
-  const payload = JSON.stringify({ next: nextPath });
-  return Buffer.from(payload, "utf8").toString("base64url");
-}
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -35,13 +20,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     initializeGooglePassport();
 
-    const nextPath = sanitizeNextPath(req.query.next);
+    const nextPath = sanitizeOAuthRedirectPath(req.query.next);
 
     passport.authenticate(GOOGLE_STRATEGY_NAME, {
       scope: ["profile", "email"],
       session: false,
       prompt: "select_account",
-      state: buildState(nextPath),
+      state: buildGoogleOAuthState(nextPath),
     })(req, res);
   } catch (error) {
     console.error("Google OAuth start error:", error);

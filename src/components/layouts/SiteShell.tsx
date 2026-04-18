@@ -23,6 +23,8 @@ export function SiteShell({
       <SiteHeader />
 
       <main
+        id="main-content"
+        aria-label={title ?? "Main content"}
         className={cn(
           "pb-10",
           fullBleed ? "px-0" : "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8",

@@ -39,7 +39,10 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
+    const auth = await requireSession(request, {
+      roles: ["STAFF", "ADMIN"],
+      requireTrustedOrigin: true,
+    });
     if (auth.error) return auth.error;
 
     const { id } = await context.params;
@@ -68,7 +71,10 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
+    const auth = await requireSession(request, {
+      roles: ["STAFF", "ADMIN"],
+      requireTrustedOrigin: true,
+    });
     if (auth.error) return auth.error;
 
     const { id } = await context.params;

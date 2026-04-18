@@ -26,7 +26,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireSession(request, { roles: ["STAFF", "ADMIN"] });
+    const auth = await requireSession(request, {
+      roles: ["STAFF", "ADMIN"],
+      requireTrustedOrigin: true,
+    });
     if (auth.error) return auth.error;
 
     const raw = (await request.json()) as unknown;

@@ -241,7 +241,7 @@ Open http://localhost:3000.
 
 | Variable                       | Required | Purpose                                |
 | ------------------------------ | -------- | -------------------------------------- |
-| GOOGLE_MAPS_API_KEY            | Yes      | Client-side stadium map rendering      |
+| NEXT_PUBLIC_GOOGLE_MAPS_API_KEY            | Yes      | Client-side stadium map rendering      |
 | AUTH_JWT_SECRET                | Yes      | JWT signing secret                     |
 | AUTH_COOKIE_NAME               | Optional | Session cookie override                |
 | GOOGLE_OAUTH_CLIENT_ID         | Yes      | Google OAuth client ID                 |

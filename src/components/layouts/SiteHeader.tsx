@@ -82,7 +82,10 @@ export function SiteHeader() {
           Stadium Sync
         </Link>
 
-        <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav
+          aria-label="Primary navigation"
+          className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {visibleLinks.map((link) => {
             const active = isActivePath(safePathname, link.href);
 

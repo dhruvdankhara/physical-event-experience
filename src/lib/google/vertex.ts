@@ -1,7 +1,3 @@
-import { existsSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
-
 import { z } from "zod";
 
 import {
@@ -138,60 +134,6 @@ function buildChatPrompt(params: {
   ].join("\n");
 }
 
-function hasExplicitCredentialsPath() {
-  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-
-  if (!credentialsPath) {
-    return false;
-  }
-
-  return existsSync(credentialsPath);
-}
-
-function hasLocalADCFile() {
-  const homeDirectory = homedir();
-
-  if (!homeDirectory) {
-    return false;
-  }
-
-  const candidatePaths = [
-    join(
-      homeDirectory,
-      "AppData",
-      "Roaming",
-      "gcloud",
-      "application_default_credentials.json",
-    ),
-    join(
-      homeDirectory,
-      ".config",
-      "gcloud",
-      "application_default_credentials.json",
-    ),
-  ];
-
-  return candidatePaths.some((candidatePath) => existsSync(candidatePath));
-}
-
-function isGoogleHostedRuntime() {
-  return Boolean(
-    process.env.K_SERVICE ||
-    process.env.CLOUD_RUN_JOB ||
-    process.env.GAE_ENV ||
-    process.env.FUNCTION_TARGET,
-  );
-}
-
-function createMissingCredentialsError() {
-  const error = new Error(
-    "Google Cloud credentials are not configured for Vertex access in this environment.",
-  ) as Error & { code?: string };
-
-  error.code = MISSING_VERTEX_CREDENTIALS_CODE;
-  return error;
-}
-
 function createInvalidOutputError(message: string, rawOutput?: string) {
   const suffix = rawOutput
     ? ` Raw output preview: ${rawOutput.slice(0, 240).replaceAll("\n", " ")}`
@@ -295,7 +237,9 @@ export function isMissingVertexCredentialsError(error: unknown) {
   return (
     message.includes("could not load the default credentials") ||
     message.includes("application default credentials") ||
-    message.includes("google cloud credentials")
+    message.includes("google cloud credentials") ||
+    message.includes("server-side google apis") ||
+    message.includes("access token")
   );
 }
 
@@ -486,15 +430,6 @@ export async function generateWaitTimeInsights(snapshots: WaitTimeSnapshot[]) {
     } satisfies WaitTimeInsights;
   }
 
-  const canAttemptRemoteVertex =
-    hasExplicitCredentialsPath() ||
-    hasLocalADCFile() ||
-    isGoogleHostedRuntime();
-
-  if (!canAttemptRemoteVertex) {
-    throw createMissingCredentialsError();
-  }
-
   const config = getGoogleProjectConfig();
   const accessToken = await getGoogleAccessToken();
   const prompt = buildPrompt(snapshots);
@@ -582,15 +517,6 @@ export async function generateStadiumChatResponse(params: {
 
   if (!question) {
     throw createInvalidOutputError("Chat question cannot be empty.");
-  }
-
-  const canAttemptRemoteVertex =
-    hasExplicitCredentialsPath() ||
-    hasLocalADCFile() ||
-    isGoogleHostedRuntime();
-
-  if (!canAttemptRemoteVertex) {
-    throw createMissingCredentialsError();
   }
 
   const snapshots = params.snapshots ?? [];

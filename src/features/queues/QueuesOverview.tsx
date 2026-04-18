@@ -82,6 +82,8 @@ export function QueuesOverview() {
     };
   }, [pois]);
 
+  const liveQueueSummary = `${queueSummary.openCount} open queues, ${queueSummary.atCapacityCount} at capacity, ${queueSummary.closedCount} closed, average wait ${queueSummary.avgWait} minutes.`;
+
   if (isLoading) {
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -108,6 +110,10 @@ export function QueuesOverview() {
 
   return (
     <div className="space-y-5">
+      <div className="sr-only" aria-live="polite">
+        {liveQueueSummary}
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
@@ -167,12 +173,12 @@ export function QueuesOverview() {
       <Card>
         <CardHeader>
           <CardTitle>Live Queue Priorities</CardTitle>
-          <CardDescription>
+          <CardDescription id="queue-priority-description">
             Highest wait-time locations in descending order.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table aria-describedby="queue-priority-description">
             <TableHeader>
               <TableRow>
                 <TableHead>POI</TableHead>

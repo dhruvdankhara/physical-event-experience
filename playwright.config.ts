@@ -56,8 +56,8 @@ export default defineConfig({
       NODE_ENV: process.env.NODE_ENV ?? "development",
       AUTH_JWT_SECRET: authJwtSecret,
       AUTH_COOKIE_NAME: authCookieName,
-      GOOGLE_MAPS_API_KEY:
-        process.env.GOOGLE_MAPS_API_KEY ??
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
+        process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
         "playwright-google-maps-key-1234567890",
       GOOGLE_OAUTH_CLIENT_ID:
         process.env.GOOGLE_OAUTH_CLIENT_ID ?? "playwright-client-id",

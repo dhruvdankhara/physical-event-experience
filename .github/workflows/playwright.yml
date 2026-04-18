@@ -33,7 +33,7 @@ jobs:
           CI: "true"
           AUTH_JWT_SECRET: playwright-ci-auth-secret-1234567890
           AUTH_COOKIE_NAME: stadium_sync_session
-          GOOGLE_MAPS_API_KEY: playwright-google-maps-key-1234567890
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: playwright-google-maps-key-1234567890
           GOOGLE_OAUTH_CLIENT_ID: playwright-client-id
           GOOGLE_OAUTH_CLIENT_SECRET: playwright-client-secret
           GOOGLE_OAUTH_CALLBACK_URL: http://127.0.0.1:3000/api/auth/google/callback

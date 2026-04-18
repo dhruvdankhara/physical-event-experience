@@ -11,8 +11,14 @@ export type SessionTokenClaims = {
 };
 
 export const AUTH_SESSION_TTL_SECONDS = 60 * 60 * 8;
-export const AUTH_COOKIE_NAME =
-  process.env.AUTH_COOKIE_NAME ?? "stadium_sync_session";
+
+export function resolveAuthCookieName() {
+  const configuredName = process.env.AUTH_COOKIE_NAME?.trim();
+
+  return configuredName || "stadium_sync_session";
+}
+
+export const AUTH_COOKIE_NAME = resolveAuthCookieName();
 
 function authSecret() {
   const secret = process.env.AUTH_JWT_SECRET;
@@ -121,14 +127,35 @@ export function isStaffOrAdmin(role: AppRole) {
   return role === "STAFF" || role === "ADMIN";
 }
 
+export function rejectUntrustedOrigin(request: NextRequest) {
+  const origin = request.headers.get("origin");
+
+  if (!origin || origin === request.nextUrl.origin) {
+    return null;
+  }
+
+  return NextResponse.json(
+    { error: "Cross-origin request blocked." },
+    { status: 403 },
+  );
+}
+
 type SessionCheckResult =
   | { session: SessionTokenClaims; error?: never }
   | { session?: never; error: NextResponse };
 
 export async function requireSession(
   request: NextRequest,
-  options?: { roles?: AppRole[] },
+  options?: { roles?: AppRole[]; requireTrustedOrigin?: boolean },
 ): Promise<SessionCheckResult> {
+  if (options?.requireTrustedOrigin) {
+    const originError = rejectUntrustedOrigin(request);
+
+    if (originError) {
+      return { error: originError };
+    }
+  }
+
   const session = await readSessionFromRequest(request);
 
   if (!session) {
